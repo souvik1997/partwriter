@@ -188,21 +188,37 @@ def main():
 	#print(findall(Triad(BareNote("C"),"halfdim7"),double=-1))
 	notes = (
 		(
-			(Note('G3'), None, None, Note('Bb4')),
-			Triad(BareNote('G'),'m')
+			(Note('G3'), None, None, Note('B4')),
+			Triad(BareNote('G'),'M')
 		),
 		(
-			(Note('C3'), None, None, Note('C5')),
-			Triad(BareNote('C'),'m')
+			(Note('E3'), None, None, Note('B4')),
+			Triad(BareNote('E'),'m')
+		),
+		(
+			(Note('A3'), None, None, Note('A4')),
+			Triad(BareNote('A'),'m')
 		),
 		(
 			(Note('D3'), None, None, Note('A4')),
 			Triad(BareNote('D'),'M')
-		)
+		),
+		(
+			(Note('G3'), None, None, Note('G4')),
+			Triad(BareNote('G'),'M')
+		),
+		(
+			(Note('D3'), None, None, Note('F#4')),
+			Triad(BareNote('D'),'M')
+		),
+		(
+			(Note('G3'), None, None, Note('G4')),
+			Triad(BareNote('G'),'M')
+		),
 	)
 	tree = Tree(None, True)
 	main_loop(notes, tree)
-	print("-------DONE-----------")
+	print("Complete!")
 	final_results = []
 	def traverse(tree,data,initial=False):
 		if not initial:
@@ -228,14 +244,16 @@ def main_loop(notes, tree):
 	p = findall(notes[tree.index][1])
 	if notes[tree.index][0][Voices['bass']] != None:
 		p[:] = [val for val in p if val[Voices['bass']] == notes[tree.index][0][Voices['bass']]]
+		#print("Bass filter",p)
 	if notes[tree.index][0][Voices['tenor']] != None:
 		p[:] = [val for val in p if val[Voices['tenor']] == notes[tree.index][0][Voices['tenor']]]
+		#print("Tenor filter",p)
 	if notes[tree.index][0][Voices['alto']] != None:
 		p[:] = [val for val in p if val[Voices['alto']] == notes[tree.index][0][Voices['alto']]]
+		#print("Alto filter",p)
 	if notes[tree.index][0][Voices['soprano']] != None:
 		p[:] = [val for val in p if val[Voices['soprano']] == notes[tree.index][0][Voices['soprano']]]
-	for val in p:
-		print(val)
+		#print("Soprano filter",p)
 	if not tree.master:
 		for rule in filters:
 			p[:] = [val for val in p if rule[1](tree.data,val)]
@@ -245,13 +263,14 @@ def checkparallel(a, b, interval):
 	for x in range(0,len(a)):
 		for y in range(x+1,len(a)):
 			if a[y].num()-a[x].num() == interval and b[y].num()-b[x].num() == interval:
-				#print("Parallel "+str(interval)+" detected", a, b)
+				print("Parallel "+str(interval)+" detected", a, b)
 				return False
 	return True
 def checkcrossover(a,b):
-	if b[Voices['tenor']] > a[Voices['bass']] and b[Voices['tenor']] < a[Voices['alto']] and b[Voices['alto']] > a[Voices['tenor']] and  b[Voices['alto']] < a[Voices['soprano']]:
+	if b[Voices['tenor']] >= a[Voices['bass']] and b[Voices['tenor']] <= a[Voices['alto']] and b[Voices['alto']] >= a[Voices['tenor']] and  b[Voices['alto']] <= a[Voices['soprano']]:
 		return True
 	else:
+		print("Crossover!",a,b)
 		return False
 if __name__ == "__main__":
 	main()
