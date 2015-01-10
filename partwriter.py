@@ -127,7 +127,7 @@ class Triad(CommonEqualityMixin):
 		self.type = type
 		self.root = root
 Ranges = {
-	"bass":[Note("G2"),Note("C4")],
+	"bass":[Note("C2"),Note("C4")],
 	"tenor":[Note("C3"),Note("G4")],
 	"alto": [Note("G3"),Note("C5")],
 	"soprano": [Note("C4"),Note("G5")]
@@ -151,14 +151,16 @@ class Tree:
 		self.index = 0
 		self.points = 0
 		self.depth = 0
+		self.badness = 0
 	def add(self,data):
 		tr = Tree(data)
 		tr.depth = self.depth + 1
 		tr.index = self.index + 1
 		tr.parent = self
+		tr.badness = self.badness
 		self.children.append(tr)
 		return tr
-def findall(tr, double=0): #note range, triad, given notes (as array of bare notes)
+def findall(tr, double=0, norepeat=False): #note range, triad, given notes (as array of bare notes)
 	def uniq(seq):
 		# order preserving
 		noDupes = []
@@ -182,43 +184,45 @@ def findall(tr, double=0): #note range, triad, given notes (as array of bare not
 	for val in param:
 		arr = loop(low, high, val)
 		results.append(arr)
-	data = [sorted(set(val)) for val in itertools.product(*results)]
+	if norepeat:
+		data = [sorted(set(val)) for val in itertools.product(*results)]
+	else:
+		data = [sorted(val) for val in itertools.product(*results)]
 	return  uniq([val for val in data if len(val) == 4 and val[0] >= Ranges["bass"][0] and val[0] <= Ranges["bass"][1] and val[1] >= Ranges["tenor"][0] and val[1] <= Ranges["tenor"][1] and val[2] >= Ranges["alto"][0] and val[0] <= Ranges["alto"][1] and val[3] >= Ranges["soprano"][0] and val[0] <= Ranges["soprano"][1]])
 def main():
 	#print(findall(Triad(BareNote("C"),"halfdim7"),double=-1))
 	notes = (
 		(
-			(Note('G3'), None, None, Note('B4')),
-			Triad(BareNote('G'),'M')
+			(Note('F#3'), None, None, Note('C#5')),
+			Triad(BareNote('F#'),'m')
 		),
 		(
-			(Note('E3'), None, None, Note('B4')),
-			Triad(BareNote('E'),'m')
+			(Note('C#3'), None, None, Note('C#5')),
+			Triad(BareNote('C#'),'M')
 		),
 		(
-			(Note('A3'), None, None, Note('A4')),
-			Triad(BareNote('A'),'m')
+			(Note('F#3'), None, None, Note('A4')),
+			Triad(BareNote('F#'),'m')
 		),
 		(
-			(Note('D3'), None, None, Note('A4')),
-			Triad(BareNote('D'),'M')
+			(Note('B2'), None, None, Note('B4')),
+			Triad(BareNote('B'),'m')
 		),
 		(
-			(Note('G3'), None, None, Note('G4')),
-			Triad(BareNote('G'),'M')
+			(Note('C#3'), None, None, Note('G#4')),
+			Triad(BareNote('C#'),'M')
 		),
 		(
-			(Note('D3'), None, None, Note('F#4')),
-			Triad(BareNote('D'),'M')
+			(Note('F#2'), Note('F#3'), None, Note('A4')),
+			Triad(BareNote('F#'),'m')
 		),
 		(
-			(Note('G3'), None, None, Note('G4')),
-			Triad(BareNote('G'),'M')
-		),
+			(Note('C#3'), Note('E#3'), None, Note('G#4')),
+			Triad(BareNote('C#'),'M')
+		)
 	)
 	tree = Tree(None, True)
 	main_loop(notes, tree)
-	print("Complete!")
 	final_results = []
 	def traverse(tree,data,initial=False):
 		if not initial:
@@ -228,18 +232,33 @@ def main():
 		else:
 			for c in tree.children:
 				traverse(c,data)
+		print(data)
 	traverse(tree,(),initial=True)
 	final_results[:] = [val for val in final_results if len(val) == len(notes)]
+	print("Complete!")
 	for val in final_results:
 		print(val)
 def main_loop(notes, tree):
 	if tree.index >= len(notes):
 		return
+	def checkparallel(a, b, interval):
+		for x in range(0,len(a)):
+			for y in range(x+1,len(a)):
+				if a[y].num()-a[x].num() == interval and b[y].num()-b[x].num() == interval:
+					print("Parallel "+str(interval)+" detected", a, b)
+					return False
+		return True
+	def checkcrossover(a,b):
+		if b[Voices['tenor']] >= a[Voices['bass']] and b[Voices['tenor']] <= a[Voices['alto']] and b[Voices['alto']] >= a[Voices['tenor']] and  b[Voices['alto']] <= a[Voices['soprano']]:
+			return True
+		else:
+			print("Crossover!",a,b)
+			return False
 	filters = [ # True: success, False: failure
 		["Parallel P1", lambda a,b: checkparallel(a, b, BareNote.intervals["P1"])],
 		["Parallel P5", lambda a,b: checkparallel(a, b, BareNote.intervals["P5"])],
 		["Parallel P8", lambda a,b: checkparallel(a, b, BareNote.intervals["P8"])],
-		["Check crossover", checkcrossover]
+		["Check crossover", checkcrossover],
 	]
 	p = findall(notes[tree.index][1])
 	if notes[tree.index][0][Voices['bass']] != None:
@@ -254,23 +273,11 @@ def main_loop(notes, tree):
 	if notes[tree.index][0][Voices['soprano']] != None:
 		p[:] = [val for val in p if val[Voices['soprano']] == notes[tree.index][0][Voices['soprano']]]
 		#print("Soprano filter",p)
+	p[:] = [val for val in p if val[Voices['soprano']].num() - val[Voices['alto']].num() <= BareNote.intervals["P8"] and val[Voices['alto']].num() - val[Voices['tenor']].num() <= BareNote.intervals["P8"]] #check spacing
 	if not tree.master:
 		for rule in filters:
 			p[:] = [val for val in p if rule[1](tree.data,val)]
 	for val in p:
 		main_loop(notes,tree.add(val))
-def checkparallel(a, b, interval):
-	for x in range(0,len(a)):
-		for y in range(x+1,len(a)):
-			if a[y].num()-a[x].num() == interval and b[y].num()-b[x].num() == interval:
-				print("Parallel "+str(interval)+" detected", a, b)
-				return False
-	return True
-def checkcrossover(a,b):
-	if b[Voices['tenor']] >= a[Voices['bass']] and b[Voices['tenor']] <= a[Voices['alto']] and b[Voices['alto']] >= a[Voices['tenor']] and  b[Voices['alto']] <= a[Voices['soprano']]:
-		return True
-	else:
-		print("Crossover!",a,b)
-		return False
 if __name__ == "__main__":
 	main()
