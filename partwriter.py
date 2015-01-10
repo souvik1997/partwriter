@@ -18,14 +18,7 @@ class BareNote(CommonEqualityMixin):
 				"Gbbb":4,"Gbb":5,"Gb":6,"G":7,"G#":8,"G##":9,"G###":10,
 				"Abbb":6,"Abb":7,"Ab":8,"A":9,"A#":10,"A##":11,"A###":12,
 				"Bbbb":8,"Bbb":9,"Bb":10,"B":11,"B#":12,"B##":13,"B###":14}
-	def ascending_interval(self,invl):
-		def search(s):
-			res = []
-			for k,v in BareNote.pitches.items():
-				if v == s:
-					res.append(k)
-			return res
-		invls = {
+	intervals = {
 			"P1":0,
 			"d2":0,
 			"m2":1,
@@ -50,7 +43,14 @@ class BareNote(CommonEqualityMixin):
 			"M7":11,
 			"A7":12,
 			"P8":12,
-		}
+	}
+	def ascending_interval(self,invl):
+		def search(s):
+			res = []
+			for k,v in BareNote.pitches.items():
+				if v == s:
+					res.append(k)
+			return res
 		carry = False
 		if invl == "P8":
 			return (Note(self.name),1)
@@ -59,8 +59,8 @@ class BareNote(CommonEqualityMixin):
 		target = self.up_letter(int(invl[-1])-1)
 		if "CDEFGAB".index(self.letter())+int(invl[-1]) > 7:
 			carry = True
-		new_pitch = (self.pitch() + invls[invl]) % 12 if carry else (self.pitch() + invls[invl])
-		#print(self.pitch(),invls[invl],new_pitch)
+		new_pitch = (self.pitch() + BareNote.intervals[invl]) % 12 if carry else (self.pitch() + BareNote.intervals[invl])
+		#print(self.pitch(),BareNote.intervals[invl],new_pitch)
 		return (BareNote([val for val in search(new_pitch) if val.find(target) > -1][0]), 1 if carry else 0)
 	def pitch(self):
 		return BareNote.pitches[self.letter()+self.accidental()]
@@ -103,7 +103,6 @@ class Note(BareNote):
 		return self.letter()+self.accidental()
 	def __lt__ (self, other):
 		return self.num() < other.num()
-
 class Triad(CommonEqualityMixin):
 	def note(self,pos):
 		return self.root.ascending_interval(Triad.types[self.type][pos])[0]
@@ -143,7 +142,28 @@ Voices = {
 	2:"alto",
 	3:"soprano"
 }
+class Tree:
+	def __init__(self, data, master=False):
+		self.children = []
+		self.data = data
+		self.master = master
+		self.parent = None
+		self.index = 0
+		self.points = 0
+		self.depth = 0
+	def add(self,data):
+		tr = Tree(data)
+		tr.depth = self.depth + 1
+		tr.index = self.index + 1
+		tr.parent = self
+		self.children.append(tr)
+		return tr
 def findall(tr, double=0): #note range, triad, given notes (as array of bare notes)
+	def uniq(seq):
+		# order preserving
+		noDupes = []
+		[noDupes.append(i) for i in seq if not noDupes.count(i)]
+		return noDupes
 	low = Ranges["bass"][0]
 	high = Ranges["soprano"][1]
 	def loop(low, high, note):
@@ -163,8 +183,69 @@ def findall(tr, double=0): #note range, triad, given notes (as array of bare not
 		arr = loop(low, high, val)
 		results.append(arr)
 	data = [sorted(set(val)) for val in itertools.product(*results)]
-	return  [val for val in data if len(val) == 4 and val[0] >= Ranges["bass"][0] and val[0] <= Ranges["bass"][1] and val[1] >= Ranges["tenor"][0] and val[1] <= Ranges["tenor"][1] and val[2] >= Ranges["alto"][0] and val[0] <= Ranges["alto"][1] and val[3] >= Ranges["soprano"][0] and val[0] <= Ranges["soprano"][1]]
+	return  uniq([val for val in data if len(val) == 4 and val[0] >= Ranges["bass"][0] and val[0] <= Ranges["bass"][1] and val[1] >= Ranges["tenor"][0] and val[1] <= Ranges["tenor"][1] and val[2] >= Ranges["alto"][0] and val[0] <= Ranges["alto"][1] and val[3] >= Ranges["soprano"][0] and val[0] <= Ranges["soprano"][1]])
 def main():
-	print(findall(Triad(BareNote("C"),"7"),double=-1))
+	#print(findall(Triad(BareNote("C"),"halfdim7"),double=-1))
+	notes = (
+		(
+			(Note('G3'), None, None, Note('Bb4')),
+			Triad(BareNote('G'),'m')
+		),
+		(
+			(Note('C3'), None, None, Note('C5')),
+			Triad(BareNote('C'),'m')
+		),
+		(
+			(Note('D3'), None, None, Note('A4')),
+			Triad(BareNote('D'),'M')
+		)
+	)
+	tree = Tree(None, True)
+	main_loop(notes, tree)
+	print("-------DONE-----------")
+	final_results = []
+	def traverse(tree,data,initial=False):
+		if not initial:
+			data += (False) if tree.data == None else (tree.data,)
+		if len(tree.children) == 0:
+			final_results.append(list(data))
+		else:
+			for c in tree.children:
+				traverse(c,data)
+	traverse(tree,(),initial=True)
+	final_results[:] = [val for val in final_results if len(val) == len(notes)]
+	for val in final_results:
+		print(val)
+def main_loop(notes, tree):
+	if tree.index >= len(notes):
+		return
+	filters = [ # True: success, False: failure
+		["Parallel P1", lambda a,b: checkparallel(a, b, BareNote.intervals["P1"])],
+		["Parallel P5", lambda a,b: checkparallel(a, b, BareNote.intervals["P5"])],
+		["Parallel P8", lambda a,b: checkparallel(a, b, BareNote.intervals["P8"])]
+	]
+	p = findall(notes[tree.index][1])
+	if notes[tree.index][0][Voices['bass']] != None:
+		p[:] = [val for val in p if val[Voices['bass']] == notes[tree.index][0][Voices['bass']]]
+	if notes[tree.index][0][Voices['tenor']] != None:
+		p[:] = [val for val in p if val[Voices['tenor']] == notes[tree.index][0][Voices['tenor']]]
+	if notes[tree.index][0][Voices['alto']] != None:
+		p[:] = [val for val in p if val[Voices['alto']] == notes[tree.index][0][Voices['alto']]]
+	if notes[tree.index][0][Voices['soprano']] != None:
+		p[:] = [val for val in p if val[Voices['soprano']] == notes[tree.index][0][Voices['soprano']]]
+	for val in p:
+		print(val)
+	if not tree.master:
+		for rule in filters:
+			p[:] = [val for val in p if rule[1](tree.data,val)]
+	for val in p:
+		main_loop(notes,tree.add(val))
+def checkparallel(a, b, interval):
+	for x in range(0,len(a)):
+		for y in range(x+1,len(a)):
+			if a[y].num()-a[x].num() == interval and b[y].num()-b[x].num() == interval:
+				#print("Parallel "+str(interval)+" detected", a, b)
+				return False
+	return True
 if __name__ == "__main__":
 	main()
