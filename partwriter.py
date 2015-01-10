@@ -222,7 +222,8 @@ def main_loop(notes, tree):
 	filters = [ # True: success, False: failure
 		["Parallel P1", lambda a,b: checkparallel(a, b, BareNote.intervals["P1"])],
 		["Parallel P5", lambda a,b: checkparallel(a, b, BareNote.intervals["P5"])],
-		["Parallel P8", lambda a,b: checkparallel(a, b, BareNote.intervals["P8"])]
+		["Parallel P8", lambda a,b: checkparallel(a, b, BareNote.intervals["P8"])],
+		["Check crossover", checkcrossover]
 	]
 	p = findall(notes[tree.index][1])
 	if notes[tree.index][0][Voices['bass']] != None:
@@ -247,5 +248,10 @@ def checkparallel(a, b, interval):
 				#print("Parallel "+str(interval)+" detected", a, b)
 				return False
 	return True
+def checkcrossover(a,b):
+	if b[Voices['tenor']] > a[Voices['bass']] and b[Voices['tenor']] < a[Voices['alto']] and b[Voices['alto']] > a[Voices['tenor']] and  b[Voices['alto']] < a[Voices['soprano']]:
+		return True
+	else:
+		return False
 if __name__ == "__main__":
 	main()
