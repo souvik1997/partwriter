@@ -26,6 +26,7 @@ class BareNote(CommonEqualityMixin):
 					res.append(k)
 			return res
 		invls = {
+			"P1":0,
 			"d2":0,
 			"m2":1,
 			"M2":2,
@@ -53,10 +54,13 @@ class BareNote(CommonEqualityMixin):
 		carry = False
 		if invl == "P8":
 			return (Note(self.name),1)
+		elif invl == "P1":
+			return (Note(self.name),0)
 		target = self.up_letter(int(invl[-1])-1)
 		if "CDEFGAB".index(self.letter())+int(invl[-1]) > 7:
 			carry = True
 		new_pitch = (self.pitch() + invls[invl]) % 12 if carry else (self.pitch() + invls[invl])
+		#print(self.pitch(),invls[invl],new_pitch)
 		return (BareNote([val for val in search(new_pitch) if val.find(target) > -1][0]), 1 if carry else 0)
 	def pitch(self):
 		return BareNote.pitches[self.letter()+self.accidental()]
@@ -68,7 +72,7 @@ class BareNote(CommonEqualityMixin):
 	def letter(self):
 		return self.name[0]
 	def accidental(self):
-		ac = self.name[:-1][1:]
+		ac = self.name[1:]
 		if ac not in ["##","#","b","bb"]:
 			return ""
 		return ac
@@ -99,69 +103,30 @@ class Note(BareNote):
 		return self.letter()+self.accidental()
 	def __lt__ (self, other):
 		return self.num() < other.num()
-Keys = {
-	"Cb":[BareNote('Cb'),BareNote('Db'),BareNote('Eb'),BareNote('Fb'),BareNote('Gb'),BareNote('Ab'),BareNote('Bb')],
-	"C":[BareNote('C'),BareNote('D'),BareNote('E'),BareNote('F'),BareNote('G'),BareNote('A'),BareNote('B')],
-	"C#":[BareNote('C#'),BareNote('D#'),BareNote('E#'),BareNote('F#'),BareNote('G#'),BareNote('A#'),BareNote('B#')],
-	"Db":[BareNote('Db'),BareNote('Eb'),BareNote('F'),BareNote('Gb'),BareNote('Ab'),BareNote('Bb'),BareNote('C')],
-	"D":[BareNote('D'),BareNote('E'),BareNote('F#'),BareNote('G'),BareNote('A'),BareNote('B'),BareNote('C#')],
-	"D#":[BareNote('D#'),BareNote('E#'),BareNote('F##'),BareNote('G#'),BareNote('A#'),BareNote('B#'),BareNote('C##')],
-	"Eb":[BareNote('Eb'),BareNote('F'),BareNote('G'),BareNote('Ab'),BareNote('Bb'),BareNote('C'),BareNote('D')],
-	"E":[BareNote('E'),BareNote('F#'),BareNote('G#'),BareNote('A'),BareNote('B'),BareNote('C#'),BareNote('D#')],
-	"E#":[BareNote('E#'),BareNote('F##'),BareNote('G##'),BareNote('A#'),BareNote('B#'),BareNote('C##'),BareNote('D##')],
-	"Fb":[BareNote('Fb'),BareNote('Gb'),BareNote('Ab'),BareNote('Bbb'),BareNote('Cb'),BareNote('Db'),BareNote('Eb')],
-	"F":[BareNote('F'),BareNote('G'),BareNote('A'),BareNote('Bb'),BareNote('C'),BareNote('D'),BareNote('E')],
-	"F#":[BareNote('F#'),BareNote('G#'),BareNote('A#'),BareNote('B'),BareNote('C#'),BareNote('D#'),BareNote('E#')],
-	"Gb":[BareNote('Gb'),BareNote('Ab'),BareNote('Bb'),BareNote('Cb'),BareNote('D'),BareNote('Eb'),BareNote('F')],
-	"G":[BareNote('G'),BareNote('A'),BareNote('B'),BareNote('C'),BareNote('D'),BareNote('E'),BareNote('F#')],
-	"G#":[BareNote('G#'),BareNote('A#'),BareNote('B#'),BareNote('C#'),BareNote('D#'),BareNote('E#'),BareNote('F##')],
-	"Ab":[BareNote('Ab'),BareNote('Bb'),BareNote('C'),BareNote('Db'),BareNote('Eb'),BareNote('F'),BareNote('G')],
-	"A":[BareNote('A'),BareNote('B'),BareNote('C#'),BareNote('D'),BareNote('E'),BareNote('F#'),BareNote('G#')],
-	"A#":[BareNote('A#'),BareNote('B#'),BareNote('C##'),BareNote('D#'),BareNote('E#'),BareNote('F##'),BareNote('G##')],
-	"Bb":[BareNote('Bb'),BareNote('C'),BareNote('D'),BareNote('Eb'),BareNote('F'),BareNote('G'),BareNote('A')],
-	"B":[BareNote('B'),BareNote('C#'),BareNote('D#'),BareNote('E'),BareNote('F#'),BareNote('G#'),BareNote('A#')],
-	"B#":[BareNote('B#'),BareNote('C##'),BareNote('D##'),BareNote('E#'),BareNote('F##'),BareNote('G##'),BareNote('A##')],
 
-	"ab":[BareNote('Cb'),BareNote('Db'),BareNote('Eb'),BareNote('Fb'),BareNote('Gb'),BareNote('Ab'),BareNote('Bb')],
-	"a":[BareNote('C'),BareNote('D'),BareNote('E'),BareNote('F'),BareNote('G'),BareNote('A'),BareNote('B')],
-	"a#":[BareNote('C#'),BareNote('D#'),BareNote('E#'),BareNote('F#'),BareNote('G#'),BareNote('A#'),BareNote('B#')],
-	"bb":[BareNote('Db'),BareNote('Eb'),BareNote('F'),BareNote('Gb'),BareNote('Ab'),BareNote('Bb'),BareNote('C')],
-	"b":[BareNote('D'),BareNote('E'),BareNote('F#'),BareNote('G'),BareNote('A'),BareNote('B'),BareNote('C#')],
-	"b#":[BareNote('D#'),BareNote('E#'),BareNote('F##'),BareNote('G#'),BareNote('A#'),BareNote('B#'),BareNote('C##')],
-	"cb":[BareNote('Ebb'),BareNote('Fb'),BareNote('Gb'),BareNote('Abb'),BareNote('Bbb'),BareNote('Cb'),BareNote('Db')],
-	"c":[BareNote('Eb'),BareNote('F'),BareNote('G'),BareNote('Ab'),BareNote('Bb'),BareNote('C'),BareNote('D')],
-	"c#":[BareNote('E'),BareNote('F#'),BareNote('G#'),BareNote('A'),BareNote('B'),BareNote('C#'),BareNote('D#')],
-	"c##":[BareNote('E#'),BareNote('F##'),BareNote('G##'),BareNote('A#'),BareNote('B#'),BareNote('C##'),BareNote('D##')],
-	"db":[BareNote('Fb'),BareNote('Gb'),BareNote('Ab'),BareNote('Bbb'),BareNote('Cb'),BareNote('Db'),BareNote('Eb')],
-	"d":[BareNote('F'),BareNote('G'),BareNote('A'),BareNote('Bb'),BareNote('C'),BareNote('D'),BareNote('E')],
-	"d#":[BareNote('F#'),BareNote('G#'),BareNote('A#'),BareNote('B'),BareNote('C#'),BareNote('D#'),BareNote('E#')],
-	"eb":[BareNote('Gb'),BareNote('Ab'),BareNote('Bb'),BareNote('Cb'),BareNote('D'),BareNote('Eb'),BareNote('F')],
-	"e":[BareNote('G'),BareNote('A'),BareNote('B'),BareNote('C'),BareNote('D'),BareNote('E'),BareNote('F#')],
-	"e#":[BareNote('G#'),BareNote('A#'),BareNote('B#'),BareNote('C#'),BareNote('D#'),BareNote('E#'),BareNote('F##')],
-	"fb":[BareNote('Abb'),BareNote('Bbb'),BareNote('Cb'),BareNote('Dbb'),BareNote('Ebb'),BareNote('Fb'),BareNote('Gb')],
-	"f":[BareNote('Ab'),BareNote('Bb'),BareNote('C'),BareNote('Db'),BareNote('Eb'),BareNote('F'),BareNote('G')],
-	"f#":[BareNote('A'),BareNote('B'),BareNote('C#'),BareNote('D'),BareNote('E'),BareNote('F#'),BareNote('G#')],
-	"f##":[BareNote('A#'),BareNote('B#'),BareNote('C##'),BareNote('D#'),BareNote('E#'),BareNote('F##'),BareNote('G##')],
-	"gb":[BareNote('Bbb'),BareNote('Cb'),BareNote('Db'),BareNote('Ebb'),BareNote('Fb'),BareNote('Gb'),BareNote('Ab')],
-	"g":[BareNote('Bb'),BareNote('C'),BareNote('D'),BareNote('Eb'),BareNote('F'),BareNote('G'),BareNote('A')],
-	"g#":[BareNote('B'),BareNote('C#'),BareNote('D#'),BareNote('E'),BareNote('F#'),BareNote('G#'),BareNote('A#')],
-	"g##":[BareNote('B#'),BareNote('C##'),BareNote('D##'),BareNote('E#'),BareNote('F##'),BareNote('G##'),BareNote('A##')],
-}
 class Triad(CommonEqualityMixin):
-	def root(self):
-		return Keys[self.name][0]
-	def third(self):
-		return Keys[self.name][2]
-	def fifth(self):
-		return Keys[self.name][4]
+	def note(self,pos):
+		return self.root.ascending_interval(Triad.types[self.type][pos])[0]
 	def notes(self):
-		return [self.root(),self.third(),self.fifth()]
-	def __init__(self,name): #name is like Gm, g, C, CM, e, Em (both forms of minor accepted)
-		if "m" in name:
-			name = name[1:].lower()
-		name.replace("M","")
-		self.name = name
-		self.note_name = name[0].upper()+name[1:]
+		ns = []
+		for x in range(0,len(Triad.types[self.type])):
+			ns.append(self.note(x))
+		return ns
+	types = {
+		"M": ["P1","M3","P5"],
+		"m": ["P1","m3","P5"],
+		"M7": ["P1", "M3","P5","M7"],
+		"m7": ["P1", "m3", "P5","m7"],
+		"mM7": ["P1", "m3", "P5", "M7"],
+		"7": ["P1", "M3", "P5", "m7"],
+		"dim": ["P1", "m3", "d5"],
+		"dim7": ["P1", "m3", "d5", "d7"],
+		"halfdim7": ["P1", "m3", "d5", "m7"],
+		"aug": ["P1","M3","A5"]
+	}
+	def __init__(self,root,type): #name is like Gm, g, C, CM, e, Em (both forms of minor accepted)
+		self.type = type
+		self.root = root
 Ranges = {
 	"bass":[Note("G2"),Note("C4")],
 	"tenor":[Note("C3"),Note("G4")],
@@ -191,12 +156,8 @@ def findall(tr, double=0): #note range, triad, given notes (as array of bare not
 				res.append(tmp)
 		return res
 	param = tr.notes()
-	if double == 0:
-		param.append(tr.root())
-	elif double == 1:
-		param.append(tr.third())
-	elif double == 2:
-		param.append(tr.fifth())
+	if double >= 0:
+		param.append(tr.notes()[double])
 	results = []
 	for val in param:
 		arr = loop(low, high, val)
@@ -204,7 +165,6 @@ def findall(tr, double=0): #note range, triad, given notes (as array of bare not
 	data = [sorted(set(val)) for val in itertools.product(*results)]
 	return  [val for val in data if len(val) == 4 and val[0] >= Ranges["bass"][0] and val[0] <= Ranges["bass"][1] and val[1] >= Ranges["tenor"][0] and val[1] <= Ranges["tenor"][1] and val[2] >= Ranges["alto"][0] and val[0] <= Ranges["alto"][1] and val[3] >= Ranges["soprano"][0] and val[0] <= Ranges["soprano"][1]]
 def main():
-	#print(findall(Triad("G")))
-	print(BareNote("E##").ascending_interval("A2"))
+	print(findall(Triad(BareNote("C"),"7"),double=-1))
 if __name__ == "__main__":
 	main()
