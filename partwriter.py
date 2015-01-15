@@ -1,6 +1,80 @@
 import itertools
 import functools
 import hashlib
+
+# Supports the following rules:
+# Keep all voices in range
+# Avoid parallel 5ths, octaves, and unisons
+# Never double leading tone
+# Double root when triad is in root position
+# Double soprano when major/minor triads are in first inversion
+# Double bass when diminished triads are in first inversion
+# All factors of triads should be present
+# Avoid large leaps of a 6th or more. Octave leaps are ok
+# Maintain an octave or less between soprano and alto and between alto and tenor
+# Do not crossover/overlap voices
+# 
+# Notes are specified in an array format (TODO: read from a file or command line)
+# `None` is a wildcard; the program attempts to get the values of these `None`s. The notes that are specified 
+# explicitly are fixed.
+# Format of array:
+#	[
+#		[
+#			Four Note()s in an array,
+#			Triad
+#		],
+#	]
+# Example:
+#  notes = [
+#	 	[
+#	 		(Note('G3'), None, None, Note('B4')),
+#	 		Triad(BareNote('G'),'M')
+#	 	],
+#	 	[
+#	 		(Note('C3'), None, None, Note('C5')),
+#	 		Triad(BareNote('C'),'m')
+#	 	],
+#	 	[
+#	 		(Note('B2'), None, None, Note('D5')),
+#	 		Triad(BareNote('G'),'M')
+#	 	],
+#	 	[
+#	 		(Note('C3'), None, None, Note('E5')),
+#	 		Triad(BareNote('C'),'M')
+#	 	],
+#	 	[
+#	 		(Note('F'), None, None, Note('D5')),
+#	 		Triad(BareNote('D'),'m')
+#	 	],
+#	 	[
+#	 		(Note('G3'), None, None, Note('D5')),
+#	 		Triad(BareNote('G'),'M')
+#	 	],
+#	 	[
+#	 		(Note('C3'), None, None, Note('C5')),
+#	 		Triad(BareNote('C'),'M')
+#	 	],
+#	 ]
+# Then create a parent/child tree:
+#  tree = Tree(None, True)
+# Determine the key of the selection:
+#  key = BareNote('C') #for the key of C (Major/minor does not matter; this is used to determine the leading tone)
+# Start the recursive loop:
+#  main_loop(notes, tree, key)
+# Traverse the tree. The parent node will have no data but will (most likely) have several children
+# Determine which paths yield the same amount of 4-note chords as was initially specified
+#
+# How it works:
+# The core of the program is the findAll method. It finds all combinations of a particular triad within the vocal ranges for 
+# each part. It finds possible notes for each voice and uses the Cartesian product to merge the voices together. All possible
+# doubling arrangements are attempted. After concatenating these initial possiblities, the main loop attempts to match the list
+# of possibiltiies with the user-provided list of notes. It then filters the list through the provided rules. Once the final
+# list of possible arrangements is obtained, each 4-note arrangement is added to the parent/child tree as children. If there 
+# are no possible arrangements that particular branch of the tree ends. Then the main loop recurses and uses one of the children
+# as parent nodes for the next iteration until all user-provided triads have been parsed.
+
+
+
 class CommonEqualityMixin(object):
 	def __eq__(self, other):
 		if isinstance(other, self.__class__):
@@ -192,36 +266,36 @@ def findall(tr, double=0, norepeat=False): #note range, triad, given notes (as a
 	return  uniq([val for val in data if len(val) == 4 and val[0] >= Ranges["bass"][0] and val[0] <= Ranges["bass"][1] and val[1] >= Ranges["tenor"][0] and val[1] <= Ranges["tenor"][1] and val[2] >= Ranges["alto"][0] and val[0] <= Ranges["alto"][1] and val[3] >= Ranges["soprano"][0] and val[0] <= Ranges["soprano"][1]])
 def main():
 	tree = Tree(None, True)
-	notes = (
-		(
+	notes = [
+		[
 			(Note('G3'), None, None, Note('B4')),
 			Triad(BareNote('G'),'M')
-		),
-		(
+		],
+		[
 			(Note('C3'), None, None, Note('C5')),
 			Triad(BareNote('C'),'m')
-		),
-		(
+		],
+		[
 			(Note('B2'), None, None, Note('D5')),
 			Triad(BareNote('G'),'M')
-		),
-		(
+		],
+		[
 			(Note('C3'), None, None, Note('E5')),
 			Triad(BareNote('C'),'M')
-		),
-		(
+		],
+		[
 			(Note('F'), None, None, Note('D5')),
 			Triad(BareNote('D'),'m')
-		),
-		(
+		],
+		[
 			(Note('G3'), None, None, Note('D5')),
 			Triad(BareNote('G'),'M')
-		),
-		(
+		],
+		[
 			(Note('C3'), None, None, Note('C5')),
 			Triad(BareNote('C'),'M')
-		),
-	)
+		],
+	]
 	main_loop(notes, tree, BareNote("C"))
 	final_results = []
 	def traverse(tree,data,initial=False): #searches tree for complete solutions
@@ -243,7 +317,10 @@ def main():
 def main_loop(notes, tree, key_root):
 	if tree.index >= len(notes):
 		return
-	p = findall(notes[tree.index][1])+findall(notes[tree.index][1],double=1)+findall(notes[tree.index][1],double=2)
+	if len(notes[tree.index][1].notes()) == 3:
+		p = findall(notes[tree.index][1])+findall(notes[tree.index][1],double=1)+findall(notes[tree.index][1],double=2)
+	else:
+		p = findall(notes[tree.index][1])
 	if notes[tree.index][0][Voices['bass']] != None:
 		p[:] = [val for val in p if val[Voices['bass']] == notes[tree.index][0][Voices['bass']]]
 	if notes[tree.index][0][Voices['tenor']] != None:
@@ -252,7 +329,6 @@ def main_loop(notes, tree, key_root):
 		p[:] = [val for val in p if val[Voices['alto']] == notes[tree.index][0][Voices['alto']]]
 	if notes[tree.index][0][Voices['soprano']] != None:
 		p[:] = [val for val in p if val[Voices['soprano']] == notes[tree.index][0][Voices['soprano']]]
-	p[:] = [val for val in p if val[Voices['soprano']].num() - val[Voices['alto']].num() <= BareNote.intervals["P8"] and val[Voices['alto']].num() - val[Voices['tenor']].num() <= BareNote.intervals["P8"]] #check spacing
 	if not tree.master:
 		for rule in two_filters:
 			p[:] = [val for val in p if rule[1](tree.data,val)]
