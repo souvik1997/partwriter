@@ -73,7 +73,7 @@ import hashlib
 # is added to the parent/child tree as children. Then the main loop recurses and uses each of the children as
 # parent nodes for the next iteration until all user-provided triads have been parsed.
 badness_config = {
-	'threshold':10000000,
+	'threshold':10000000-1,
 	'parallel': 10000000,
 	'crossover': 10000000,
 	'smoothness': 3, #this is an exponential factor
@@ -274,35 +274,39 @@ def main():
 	tree = Tree(None, True)
 	notes = [
 		[
-			(Note('C3'), Note('Eb4'), Note('G4'), Note('C5')),
-			Triad(BareNote('C'),'m')
+			(Note('Eb3'), Note('Bb3'), Note('Eb4'), Note('G4')),
+			Triad(BareNote('Eb'),'M')
 		],
 		[
-			(Note('B2'), None, None, Note('D5')),
-			Triad(BareNote('G'),'M')
+			(Note('D3'), None, None, Note('Bb4')),
+			Triad(BareNote('Bb'),'M')
 		],
 		[
-			(Note('C3'), Note('C4'), Note('G4'), Note('Eb5')),
-			Triad(BareNote('C'),'m')
+			(Note('F3'), Note('A3'), Note('F4'), Note('C5')),
+			Triad(BareNote('F'),'M')
 		],
 		[
-			(Note('F3'), None, None, Note('D5')),
-			Triad(BareNote('D'),'m')
+			(Note('Bb2'), None, None, Note('D5')),
+			Triad(BareNote('Bb'),'M')
 		],
 		[
-			(Note('G3'), None, None, Note('C5')),
-			Triad(BareNote('C'),'m')
+			(Note('G2'), None, None, Note('Eb5')),
+			Triad(BareNote('Eb'),'M')
 		],
 		[
-			(Note('G3'), None, None, Note('B4')),
-			Triad(BareNote('G'),'M')
+			(Note('F2'), None, None, Note('D5')),
+			Triad(BareNote('Bb'),'M')
 		],
 		[
-			(Note('C3'), None, None, Note('C5')),
-			Triad(BareNote('C'),'m')
+			(Note('F3'), Note('A3'), Note('F4'), Note('C5')),
+			Triad(BareNote('F'),'M')
+		],
+		[
+			(Note('Bb2'), None, None, Note('Bb4')),
+			Triad(BareNote('Bb'),'M')
 		],
 	]
-	main_loop(notes, tree, BareNote("C"))
+	main_loop(notes, tree, BareNote("Bb"))
 	final_results = []
 	def traverse(tree,data,initial=False): #searches tree for complete solutions
 		if not initial and tree.data != None: #first node has no data
