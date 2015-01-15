@@ -73,14 +73,15 @@ import hashlib
 # is added to the parent/child tree as children. Then the main loop recurses and uses each of the children as
 # parent nodes for the next iteration until all user-provided triads have been parsed.
 badness_config = {
-	'threshold':10000000,
+	'threshold':10000000/4,
 	'parallel': 10000000,
 	'crossover': 10000000,
 	'smoothness': 3, #this is an exponential factor
 	'doubling': 10000000/4,
 	'large leaps': 10000000/2,
 	'octaveorless': 10000000/2,
-	'leading tone': 10000000
+	'leading tone': 10000000,
+	'a4':10000000
 }
 class CommonEqualityMixin(object):
 	def __eq__(self, other):
@@ -407,6 +408,13 @@ def checklargeleaps(a, b, interval):
 			print("Large leap!",a,b)
 			return badness
 	return 0
+def check_a4(a,b):
+	badness = badness_config['a4']
+	for x in range(0,4):
+		if abs(a[x].num()-b[x].num()) == BareNote.intervals["A4"]:
+			print("A4!",a,b)
+			return badness
+	return 0
 def octaveorless(notes):
 	badness = badness_config['octaveorless']
 	res = notes[Voices['soprano']].num() - notes[Voices['alto']].num() <= BareNote.intervals['P8'] and notes[Voices['alto']].num() - notes[Voices['tenor']].num() <= BareNote.intervals['P8']
@@ -432,6 +440,7 @@ two_filters = [ # True: success, False: failure
 	["Check crossover", checkcrossover],
 	["Large leaps", lambda a,b: checklargeleaps(a, b, BareNote.intervals['m6'])],
 	["Smoothness", checksmoothness],
+	["A2/A4",check_a4]
 ]
 if __name__ == "__main__":
 	main()
