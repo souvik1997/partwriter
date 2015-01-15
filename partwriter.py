@@ -72,6 +72,15 @@ import hashlib
 # 4-note arrangement is added to the parent/child tree as children. If there are no possible arrangements that
 # particular branch of the tree ends. Then the main loop recurses and uses each of the children as parent nodes
 # for the next iteration until all user-provided triads have been parsed.
+badness_config = {
+	'parallel': 10000000,
+	'crossover': 10000000,
+	'smoothness': 3, #this is an exponential factor
+	'doubling': 40000,
+	'large leaps': 100000,
+	'octaveorless': 100000,
+	'leading tone': 100000000
+}
 class CommonEqualityMixin(object):
 	def __eq__(self, other):
 		if isinstance(other, self.__class__):
@@ -223,12 +232,12 @@ class Tree:
 		self.points = 0
 		self.depth = 0
 		self.badness = 0
-	def add(self,data):
+	def add(self,data,badness=0):
 		tr = Tree(data)
 		tr.depth = self.depth + 1
 		tr.index = self.index + 1
 		tr.parent = self
-		tr.badness = self.badness
+		tr.badness = self.badness + badness
 		self.children.append(tr)
 		return tr
 def findall(tr, double=0, norepeat=False): #note range, triad, given notes (as array of bare notes)
@@ -283,14 +292,6 @@ def main():
 			(Note('F3'), None, Note('A4'), None),
 			Triad(BareNote('D'),'m')
 		],
-		[
-			(None, None, None, None),
-			Triad(BareNote('G'),'halfdim7')
-		],
-		[
-			(Note('C3'), None, None, None),
-			Triad(BareNote('C'),'M')
-		],
 	]
 	main_loop(notes, tree, BareNote("C"))
 	final_results = []
@@ -298,17 +299,19 @@ def main():
 		if not initial and tree.data != None: #first node has no data
 			data += (tree.data,)
 		if len(tree.children) == 0:
-			final_results.append(list(data))
+			final_results.append([tree.badness,list(data)])
 		else:
 			for c in tree.children:
 				traverse(c,data)
 		print(data)
 	traverse(tree,(),initial=True)
-	final_results[:] = [val for val in final_results if len(val) == len(notes)]
-	print("Complete! Listing solutions with md5 hash:")
+	final_results[:] = [val for val in final_results if len(val[1]) == len(notes)] #sanity check
+	final_results.sort(key=lambda a: a[0],reverse=True)
+	print("Complete! Listing solutions:")
+	print("Format: badness, notes, hash")
 	print(len(final_results),"complete solutions")
 	for val in final_results:
-		print(val,hashlib.md5(str(val).encode()).hexdigest())
+		print(val[0],val[1],hashlib.md5(str(val).encode()).hexdigest())
 def main_loop(notes, tree, key_root):
 	if tree.index >= len(notes):
 		return
@@ -324,29 +327,42 @@ def main_loop(notes, tree, key_root):
 		p[:] = [val for val in p if val[Voices['alto']] == notes[tree.index][0][Voices['alto']]]
 	if notes[tree.index][0][Voices['soprano']] != None:
 		p[:] = [val for val in p if val[Voices['soprano']] == notes[tree.index][0][Voices['soprano']]]
+	p[:] = [[val,0] for val in p] #default badness = 0
 	if not tree.master:
 		for rule in two_filters:
-			p[:] = [val for val in p if rule[1](tree.data,val)]
-	p[:] = [val for val in p if checkdoubling(val,notes[tree.index][1]) and octaveorless(val) and checkleadingtone(val,key_root)]
+			for val in p:
+				val[1] += rule[1](tree.data,val[0])
 	for val in p:
-		main_loop(notes,tree.add(val), key_root)
+		val[1] += checkdoubling(val[0],notes[tree.index][1]) + octaveorless(val[0]) + checkleadingtone(val[0],key_root)
+	for val in p:
+		new_node = tree.add(val[0],val[1])
+		main_loop(notes,new_node, key_root)
+#Rules:
 def checkparallel(a, b, interval):
+	badness = 10000000 #Very bad!
 	for x in range(0,len(a)):
 		for y in range(x+1,len(a)):
 			if a[y].num()-a[x].num() == interval and b[y].num()-b[x].num() == interval and a[y].num() != b[y].num() and a[x].num() != b[x].num():
 				print("Parallel "+str(interval)+" detected", a, b)
-				return False
-	return True
+				return badness
+	return 0
 def checkcrossover(a,b):
+	badness = badness_config['crossover'] #Very bad!
 	if b[Voices['tenor']] >= a[Voices['bass']] and b[Voices['tenor']] <= a[Voices['alto']] and b[Voices['alto']] >= a[Voices['tenor']] and  b[Voices['alto']] <= a[Voices['soprano']]:
-		return True
+		return 0
 	else:
 		print("Crossover!",a,b)
-		return False
+		return badness
+def checksmoothness(a,b):
+	badness = 0
+	for x in range(0,4):
+		badness += pow(badness_config['smoothness'],abs(a[x].num() - b[x].num()))
+	return badness
 def checkdoubling(notes,triad):
+	badness = badness_config['doubling']
 	if len(triad.notes()) != 3:
-		return True
-	double = triad.note(0) #default
+		return 0
+	double = notes[Voices['bass']] #default is the bass
 	toprint = ""
 	if notes[Voices['bass']].pitch() == triad.note(0).pitch():
 		toprint = 'root position: '+str(notes)+", "+str(triad.notes())
@@ -363,39 +379,45 @@ def checkdoubling(notes,triad):
 		if notes[x].pitch() == double.pitch():
 			doublecount = doublecount + 1
 	if doublecount == 2:
-		return True
+		return 0
 	else:
 		if toprint == "":
 			print('Doubling Error! ?',notes,triad.notes())
 		else:
 			print('Doubling Error!',toprint)
-		return False
+		return badness
 def checklargeleaps(a, b, interval):
+	badness = badness_config['large leaps']
 	for x in range(0,4):
 		if abs(a[x].num()-b[x].num()) >= interval and abs(a[x].num()-b[x].num()) != BareNote.intervals['P8']:
 			print("Large leap!",a,b)
-			return False
-	return True
+			return badness
+	return 0
 def octaveorless(notes):
+	badness = badness_config['octaveorless']
 	res = notes[Voices['soprano']].num() - notes[Voices['alto']].num() <= BareNote.intervals['P8'] and notes[Voices['alto']].num() - notes[Voices['tenor']].num() <= BareNote.intervals['P8']
 	if not res:
 		print("Soprano/alto or alto/tenor are more than an octave apart!",notes)
-	return res
+		return badness
+	return 0
 def checkleadingtone(notes, key_root):
+	badness = badness_config['leading tone']
 	count = 0
 	for x in range(0,4):
 		if notes[x].pitch() == key_root.ascending_interval("M7")[0].pitch():
 			count = count + 1
 	if count < 2:
-		return True
+		return 0
 	else:
 		print("Too many leading tones!",notes)
+		return badness
 two_filters = [ # True: success, False: failure
 	["Parallel P1", lambda a,b: checkparallel(a, b, BareNote.intervals["P1"])],
 	["Parallel P5", lambda a,b: checkparallel(a, b, BareNote.intervals["P5"])],
 	["Parallel P8", lambda a,b: checkparallel(a, b, BareNote.intervals["P8"])],
 	["Check crossover", checkcrossover],
 	["Large leaps", lambda a,b: checklargeleaps(a, b, BareNote.intervals['m6'])],
+	["Smoothness", checksmoothness],
 ]
 if __name__ == "__main__":
 	main()
