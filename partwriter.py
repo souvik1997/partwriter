@@ -31,7 +31,7 @@ import hashlib
 #	 	],
 #	 	[
 #	 		(Note('C3'), None, None, Note('C5')),
-#	 		Triad(BareNote('C'),'m')
+#	 		Triad(BareNote('C'),'M')
 #	 	],
 #	 	[
 #	 		(Note('B2'), None, None, Note('D5')),
@@ -42,7 +42,7 @@ import hashlib
 #	 		Triad(BareNote('C'),'M')
 #	 	],
 #	 	[
-#	 		(Note('F'), None, None, Note('D5')),
+#	 		(Note('F3'), None, None, Note('D5')),
 #	 		Triad(BareNote('D'),'m')
 #	 	],
 #	 	[
@@ -269,7 +269,7 @@ def main():
 		],
 		[
 			(Note('C3'), None, None, Note('C5')),
-			Triad(BareNote('C'),'m')
+			Triad(BareNote('C'),'M')
 		],
 		[
 			(Note('B2'), None, None, Note('D5')),
@@ -280,7 +280,7 @@ def main():
 			Triad(BareNote('C'),'M')
 		],
 		[
-			(Note('F'), None, None, Note('D5')),
+			(Note('F3'), None, None, Note('D5')),
 			Triad(BareNote('D'),'m')
 		],
 		[
