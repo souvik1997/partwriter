@@ -1,7 +1,6 @@
 import itertools
 import functools
 import hashlib
-
 # Supports the following rules:
 # Keep all voices in range
 # Avoid parallel 5ths, octaves, and unisons
@@ -13,9 +12,9 @@ import hashlib
 # Avoid large leaps of a 6th or more. Octave leaps are ok
 # Maintain an octave or less between soprano and alto and between alto and tenor
 # Do not crossover/overlap voices
-# 
+#
 # Notes are specified in an array format (TODO: read from a file or command line)
-# `None` is a wildcard; the program attempts to get the values of these `None`s. The notes that are specified 
+# `None` is a wildcard; the program attempts to get the values of these `None`s. The notes that are specified
 # explicitly are fixed.
 # Format of array:
 #	[
@@ -65,16 +64,14 @@ import hashlib
 # Determine which paths yield the same amount of 4-note chords as was initially specified
 #
 # How it works:
-# The core of the program is the findAll method. It finds all combinations of a particular triad within the vocal ranges for 
-# each part. It finds possible notes for each voice and uses the Cartesian product to merge the voices together. All possible
-# doubling arrangements are attempted. After concatenating these initial possiblities, the main loop attempts to match the list
-# of possibiltiies with the user-provided list of notes. It then filters the list through the provided rules. Once the final
-# list of possible arrangements is obtained, each 4-note arrangement is added to the parent/child tree as children. If there 
-# are no possible arrangements that particular branch of the tree ends. Then the main loop recurses and uses one of the children
-# as parent nodes for the next iteration until all user-provided triads have been parsed.
-
-
-
+# The core of the program is the findAll method. It finds all combinations of a particular triad within the vocal
+# ranges for each part. It finds possible notes for each voice and uses the Cartesian product to merge the voices
+# together. All possible doubling arrangements are attempted. After concatenating these initial possiblities,
+# the main loop attempts to match the list of possibiltiies with the user-provided list of notes. It then
+# filters the list through the provided rules. Once the final list of possible arrangements is obtained, each
+# 4-note arrangement is added to the parent/child tree as children. If there are no possible arrangements that
+# particular branch of the tree ends. Then the main loop recurses and uses one of the children as parent nodes
+# for the next iteration until all user-provided triads have been parsed.
 class CommonEqualityMixin(object):
 	def __eq__(self, other):
 		if isinstance(other, self.__class__):
