@@ -264,7 +264,7 @@ def main():
 	tree = Tree(None, True)
 	notes = [
 		[
-			(Note('G3'), None, None, Note('B4')),
+			(Note('G3'), None, None, Note('G4')),
 			Triad(BareNote('G'),'M')
 		],
 		[
@@ -277,15 +277,15 @@ def main():
 		],
 		[
 			(Note('C3'), None, None, Note('E5')),
-			Triad(BareNote('C'),'M')
+			Triad(BareNote('C'),'7')
 		],
 		[
-			(Note('F3'), None, None, None),
+			(Note('F3'), None, Note('A4'), None),
 			Triad(BareNote('D'),'m')
 		],
 		[
 			(None, None, None, None),
-			Triad(BareNote('G'),'7')
+			Triad(BareNote('G'),'halfdim7')
 		],
 		[
 			(Note('C3'), None, None, None),
@@ -333,7 +333,7 @@ def main_loop(notes, tree, key_root):
 def checkparallel(a, b, interval):
 	for x in range(0,len(a)):
 		for y in range(x+1,len(a)):
-			if a[y].num()-a[x].num() == interval and b[y].num()-b[x].num() == interval:
+			if a[y].num()-a[x].num() == interval and b[y].num()-b[x].num() == interval and a[y].num() != b[y].num() and a[x].num() != b[x].num():
 				print("Parallel "+str(interval)+" detected", a, b)
 				return False
 	return True
