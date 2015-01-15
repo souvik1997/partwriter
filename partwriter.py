@@ -273,24 +273,32 @@ def main():
 	tree = Tree(None, True)
 	notes = [
 		[
-			(Note('G3'), None, None, Note('G4')),
+			(Note('D3'), Note('D4'), Note('F#4'), Note('A4')),
+			Triad(BareNote('D'),'M')
+		],
+		[
+			(Note('F#3'), None, None, Note('D5')),
+			Triad(BareNote('D'),'M')
+		],
+		[
+			(Note('G3'), Note('D4'), Note('G4'), Note('B4')),
 			Triad(BareNote('G'),'M')
 		],
 		[
-			(Note('C3'), None, None, Note('C5')),
-			Triad(BareNote('C'),'M')
+			(Note('D3'), None, None, Note('A4')),
+			Triad(BareNote('D'),'M')
 		],
 		[
-			(Note('B2'), None, None, Note('D5')),
-			Triad(BareNote('G'),'M')
+			(Note('E3'), None, None, Note('G4')),
+			Triad(BareNote('C#'),'dim')
 		],
 		[
-			(Note('C3'), None, None, Note('E5')),
-			Triad(BareNote('C'),'7')
+			(Note('F#3'), None, None, Note('F#4')),
+			Triad(BareNote('D'),'M')
 		],
 		[
-			(Note('F3'), None, Note('A4'), None),
-			Triad(BareNote('D'),'m')
+			(Note('A3'), None, None, Note('E4')),
+			Triad(BareNote('A'),'M')
 		],
 	]
 	main_loop(notes, tree, BareNote("C"))
