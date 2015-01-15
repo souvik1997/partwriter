@@ -70,7 +70,7 @@ import hashlib
 # the main loop attempts to match the list of possibiltiies with the user-provided list of notes. It then
 # filters the list through the provided rules. Once the final list of possible arrangements is obtained, each
 # 4-note arrangement is added to the parent/child tree as children. If there are no possible arrangements that
-# particular branch of the tree ends. Then the main loop recurses and uses one of the children as parent nodes
+# particular branch of the tree ends. Then the main loop recurses and uses each of the children as parent nodes
 # for the next iteration until all user-provided triads have been parsed.
 class CommonEqualityMixin(object):
 	def __eq__(self, other):
