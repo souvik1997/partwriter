@@ -73,14 +73,14 @@ import hashlib
 # is added to the parent/child tree as children. Then the main loop recurses and uses each of the children as
 # parent nodes for the next iteration until all user-provided triads have been parsed.
 badness_config = {
-	'threshold':10000000-1,
+	'threshold':10000000,
 	'parallel': 10000000,
 	'crossover': 10000000,
 	'smoothness': 3, #this is an exponential factor
-	'doubling': 400000,
-	'large leaps': 100000,
-	'octaveorless': 100000,
-	'leading tone': 100000000
+	'doubling': 10000000/4,
+	'large leaps': 10000000/2,
+	'octaveorless': 10000000/2,
+	'leading tone': 10000000
 }
 class CommonEqualityMixin(object):
 	def __eq__(self, other):
@@ -274,39 +274,39 @@ def main():
 	tree = Tree(None, True)
 	notes = [
 		[
-			(Note('Eb3'), Note('Bb3'), Note('Eb4'), Note('G4')),
-			Triad(BareNote('Eb'),'M')
+			(Note('A2'), Note('A3'), Note('E4'), Note('C#5')),
+			Triad(BareNote('A'),'M')
 		],
 		[
-			(Note('D3'), None, None, Note('Bb4')),
-			Triad(BareNote('Bb'),'M')
+			(Note('D3'), None, None, Note('D5')),
+			Triad(BareNote('D'),'m')
 		],
 		[
-			(Note('F3'), Note('A3'), Note('F4'), Note('C5')),
-			Triad(BareNote('F'),'M')
+			(Note('C#3'), None, None, Note('E5')),
+			Triad(BareNote('A'),'M')
+		],
+		[
+			(Note('D3'), Note('A3'), Note('F4'), Note('D5')),
+			Triad(BareNote('D'),'m')
 		],
 		[
 			(Note('Bb2'), None, None, Note('D5')),
-			Triad(BareNote('Bb'),'M')
+			Triad(BareNote('G'),'m')
 		],
 		[
-			(Note('G2'), None, None, Note('Eb5')),
-			Triad(BareNote('Eb'),'M')
+			(Note('A2'), None, None, Note('F5')),
+			Triad(BareNote('D'),'m')
 		],
 		[
-			(Note('F2'), None, None, Note('D5')),
-			Triad(BareNote('Bb'),'M')
+			(Note('A2'), None, None, Note('E5')),
+			Triad(BareNote('A'),'M')
 		],
 		[
-			(Note('F3'), Note('A3'), Note('F4'), Note('C5')),
-			Triad(BareNote('F'),'M')
-		],
-		[
-			(Note('Bb2'), None, None, Note('Bb4')),
-			Triad(BareNote('Bb'),'M')
+			(Note('D3'), None, None, Note('D5')),
+			Triad(BareNote('D'),'m')
 		],
 	]
-	main_loop(notes, tree, BareNote("Bb"))
+	main_loop(notes, tree, BareNote("D"))
 	final_results = []
 	def traverse(tree,data,initial=False): #searches tree for complete solutions
 		if not initial and tree.data != None: #first node has no data
