@@ -157,9 +157,13 @@ class BareNote(CommonEqualityMixin):
 		return self.name[0]
 	def accidental(self):
 		ac = self.name[1:]
-		if len(ac) == 0 or ac[0] not in ["##","#","b","bb"]:
+		if len(ac) == 0:
 			return ""
-		return ac[0]
+		if ac[-1] in ['0','1','2','3','4','5','6','7','8','9']:
+			ac = ac[:-1]
+		if len(ac) == 0 or ac not in ["##","#","b","bb"]:
+			return ""
+		return ac
 	def __str__(self):
 		return self.name
 	def __repr__(self):
