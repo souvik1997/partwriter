@@ -1,5 +1,6 @@
 import itertools
 import functools
+import hashlib
 class CommonEqualityMixin(object):
 	def __eq__(self, other):
 		if isinstance(other, self.__class__):
@@ -43,7 +44,9 @@ class BareNote(CommonEqualityMixin):
 			"M7":11,
 			"A7":12,
 			"P8":12,
-	}
+	}	
+	def bare_name(self):
+		return self.letter()+self.accidental()
 	def ascending_interval(self,invl):
 		def search(s):
 			res = []
@@ -53,9 +56,9 @@ class BareNote(CommonEqualityMixin):
 			return res
 		carry = False
 		if invl == "P8":
-			return (Note(self.name),1)
+			return (BareNote(self.bare_name()),1)
 		elif invl == "P1":
-			return (Note(self.name),0)
+			return (BareNote(self.bare_name()),0)
 		target = self.up_letter(int(invl[-1])-1)
 		if "CDEFGAB".index(self.letter())+int(invl[-1]) > 7:
 			carry = True
@@ -73,9 +76,9 @@ class BareNote(CommonEqualityMixin):
 		return self.name[0]
 	def accidental(self):
 		ac = self.name[1:]
-		if ac not in ["##","#","b","bb"]:
+		if len(ac) == 0 or ac[0] not in ["##","#","b","bb"]:
 			return ""
-		return ac
+		return ac[0]
 	def __str__(self):
 		return self.name
 	def __repr__(self):
@@ -99,8 +102,6 @@ class Note(BareNote):
 		return Note(self.letter()+self.accidental()+(self.octave()-1))
 	def num(self):
 		return self.pitch()+12*self.octave()
-	def bare_name(self):
-		return self.letter()+self.accidental()
 	def __lt__ (self, other):
 		return self.num() < other.num()
 class Triad(CommonEqualityMixin):
@@ -222,7 +223,7 @@ def main():
 		),
 	)
 	tree = Tree(None, True)
-	main_loop(notes, tree, BareNote('G'))
+	main_loop(notes, tree, BareNote("Eb"))
 	final_results = []
 	def traverse(tree,data,initial=False):
 		if not initial:
@@ -237,69 +238,93 @@ def main():
 	final_results[:] = [val for val in final_results if len(val) == len(notes)]
 	print("Complete!")
 	for val in final_results:
-		print(val)
-def main_loop(notes, tree, key):
+		print(val,hashlib.md5(str(val).encode()).hexdigest())
+def main_loop(notes, tree, key_root):
 	if tree.index >= len(notes):
 		return
-	def checkparallel(a, b, interval):
-		for x in range(0,len(a)):
-			for y in range(x+1,len(a)):
-				if a[y].num()-a[x].num() == interval and b[y].num()-b[x].num() == interval:
-					print("Parallel "+str(interval)+" detected", a, b)
-					return False
-		return True
-	def checkcrossover(a,b):
-		if b[Voices['tenor']] >= a[Voices['bass']] and b[Voices['tenor']] <= a[Voices['alto']] and b[Voices['alto']] >= a[Voices['tenor']] and  b[Voices['alto']] <= a[Voices['soprano']]:
-			return True
-		else:
-			print("Crossover!",a,b)
-			return False
-	def checkdoubling(notes,triad):
-		double = triad.notes[0] #default
-		if notes[Voices['bass']] == triad.notes[0]:
-			double = triad.notes[0]
-		elif triad.type == 'M' or triad.type == 'm':			
-			if notes[Voices['bass']] == triad.notes[1]:
-				double = a[Voices['soprano']]
-		elif triad.type == 'dim' and notes[Voices['bass']] == triad.notes[1]:
-			double = triad.notes[0]
-		doublecount = 0
-		for x in range(0,4):
-			if notes[x].pitch() == double.pitch():
-				doublecount = doublecount + 1
-		return doublecount == 2
-	def checklargeleaps(a, b, interval):
-		for x in range(0,4):
-			if abs(a[x].num()-b[x].num()) >= interval:
-				return False
-		return True
-	def octaveorless(notes):
-		return notes[Voices['soprano']].num() - notes[Voices['alto']].num() <= BareNote.intervals('P8') and notes[Voices['alto']].num() - notes[Voices['tenor']].num() <= BareNote.intervals('P8')
-	two_filters = [ # True: success, False: failure
-		["Parallel P1", lambda a,b: checkparallel(a, b, BareNote.intervals["P1"])],
-		["Parallel P5", lambda a,b: checkparallel(a, b, BareNote.intervals["P5"])],
-		["Parallel P8", lambda a,b: checkparallel(a, b, BareNote.intervals["P8"])],
-		["Check crossover", checkcrossover],
-		["Large leaps", lambda a,b: checklargeleaps(a, b, BareNote.intervals['m6'])],
-	]
 	p = findall(notes[tree.index][1])+findall(notes[tree.index][1],double=1)+findall(notes[tree.index][1],double=2)
 	if notes[tree.index][0][Voices['bass']] != None:
 		p[:] = [val for val in p if val[Voices['bass']] == notes[tree.index][0][Voices['bass']]]
-		#print("Bass filter",p)
 	if notes[tree.index][0][Voices['tenor']] != None:
 		p[:] = [val for val in p if val[Voices['tenor']] == notes[tree.index][0][Voices['tenor']]]
-		#print("Tenor filter",p)
 	if notes[tree.index][0][Voices['alto']] != None:
 		p[:] = [val for val in p if val[Voices['alto']] == notes[tree.index][0][Voices['alto']]]
-		#print("Alto filter",p)
 	if notes[tree.index][0][Voices['soprano']] != None:
 		p[:] = [val for val in p if val[Voices['soprano']] == notes[tree.index][0][Voices['soprano']]]
-		#print("Soprano filter",p)
 	p[:] = [val for val in p if val[Voices['soprano']].num() - val[Voices['alto']].num() <= BareNote.intervals["P8"] and val[Voices['alto']].num() - val[Voices['tenor']].num() <= BareNote.intervals["P8"]] #check spacing
 	if not tree.master:
 		for rule in two_filters:
 			p[:] = [val for val in p if rule[1](tree.data,val)]
+		p[:] = [val for val in p if checkdoubling(val,notes[tree.index][1])]
+		p[:] = [val for val in p if octaveorless(val)]
+		p[:] = [val for val in p if checkleadingtone(val,key_root)]
 	for val in p:
-		main_loop(notes,tree.add(val), key)
+		main_loop(notes,tree.add(val), key_root)
+def checkparallel(a, b, interval):
+	for x in range(0,len(a)):
+		for y in range(x+1,len(a)):
+			if a[y].num()-a[x].num() == interval and b[y].num()-b[x].num() == interval:
+				print("Parallel "+str(interval)+" detected", a, b)
+				return False
+	return True
+def checkcrossover(a,b):
+	if b[Voices['tenor']] >= a[Voices['bass']] and b[Voices['tenor']] <= a[Voices['alto']] and b[Voices['alto']] >= a[Voices['tenor']] and  b[Voices['alto']] <= a[Voices['soprano']]:
+		return True
+	else:
+		print("Crossover!",a,b)
+		return False
+def checkdoubling(notes,triad):
+	double = triad.notes()[0] #default
+	toprint = ""
+	if notes[Voices['bass']].pitch() == triad.note(0).pitch():		
+		toprint = 'root position: '+str(notes)+", "+str(triad.notes())
+		double = triad.note(0)
+	elif triad.type == 'M' or triad.type == 'm':			
+		if notes[Voices['bass']].pitch() == triad.note(1).pitch():
+			toprint = '1st inversion, major or minor: '+str(notes)+", "+str(triad.notes())
+			double = notes[Voices['soprano']]
+	elif triad.type == 'dim' and notes[Voices['bass']].pitch() == triad.note(1).pitch():
+		toprint = 'diminished, first inversion: '+str(notes)+", "+str(triad.notes())
+		double = triad.note(0)
+	doublecount = 0
+	for x in range(0,4):
+		if notes[x].pitch() == double.pitch():
+			doublecount = doublecount + 1
+	if doublecount == 2:
+		return True
+	else:
+		if toprint == "":
+			print('Fail! ?',notes,triad.notes())
+		else:
+			print('Fail!',toprint)
+		return False
+def checklargeleaps(a, b, interval):
+	for x in range(0,4):
+		if abs(a[x].num()-b[x].num()) >= interval and abs(a[x].num()-b[x].num()) != BareNote.intervals['P8']:
+			print("Large leap!",a,b)
+			return False
+	return True
+def octaveorless(notes):
+	return notes[Voices['soprano']].num() - notes[Voices['alto']].num() <= BareNote.intervals['P8'] and notes[Voices['alto']].num() - notes[Voices['tenor']].num() <= BareNote.intervals['P8']
+def checkleadingtone(notes, key_root):
+	count = 0
+	for x in range(0,4):
+		if notes[x].pitch() == key_root.ascending_interval("M7")[0].pitch():
+			count = count + 1
+	if count < 2:
+		return True
+	else:
+		print("Too many leading tones!",notes)
+two_filters = [ # True: success, False: failure
+	["Parallel P1", lambda a,b: checkparallel(a, b, BareNote.intervals["P1"])],
+	["Parallel P5", lambda a,b: checkparallel(a, b, BareNote.intervals["P5"])],
+	["Parallel P8", lambda a,b: checkparallel(a, b, BareNote.intervals["P8"])],
+	["Check crossover", checkcrossover],
+	["Large leaps", lambda a,b: checklargeleaps(a, b, BareNote.intervals['m6'])],
+]
 if __name__ == "__main__":
+	#print(checkdoubling([Note('E4'),Note('C4'),Note('G4'),Note('E5')],Triad(BareNote('C'),'M')))
+	#print(BareNote('Ab').pitch())
+	#print(Note('Ab2').pitch())
+	#print(checkleadingtone([Note('E4'),Note('C4'),Note('B4'),Note('B5')],BareNote('C')))
 	main()
