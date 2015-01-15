@@ -44,7 +44,7 @@ class BareNote(CommonEqualityMixin):
 			"M7":11,
 			"A7":12,
 			"P8":12,
-	}	
+	}
 	def bare_name(self):
 		return self.letter()+self.accidental()
 	def ascending_interval(self,invl):
@@ -191,43 +191,42 @@ def findall(tr, double=0, norepeat=False): #note range, triad, given notes (as a
 		data = [sorted(val) for val in itertools.product(*results)]
 	return  uniq([val for val in data if len(val) == 4 and val[0] >= Ranges["bass"][0] and val[0] <= Ranges["bass"][1] and val[1] >= Ranges["tenor"][0] and val[1] <= Ranges["tenor"][1] and val[2] >= Ranges["alto"][0] and val[0] <= Ranges["alto"][1] and val[3] >= Ranges["soprano"][0] and val[0] <= Ranges["soprano"][1]])
 def main():
-	#print(findall(Triad(BareNote("C"),"halfdim7"),double=-1))
+	tree = Tree(None, True)
 	notes = (
 		(
-			(Note('Eb3'), None, None, Note('G4')),
-			Triad(BareNote('Eb'),'M')
+			(Note('G3'), None, None, Note('B4')),
+			Triad(BareNote('G'),'M')
 		),
 		(
-			(Note('C3'), None, None, Note('G4')),
+			(Note('C3'), None, None, Note('C5')),
 			Triad(BareNote('C'),'m')
 		),
 		(
-			(Note('Ab2'), None, None, Note('Ab4')),
-			Triad(BareNote('Ab'),'M')
+			(Note('B2'), None, None, Note('D5')),
+			Triad(BareNote('G'),'M')
 		),
 		(
-			(Note('Bb2'), None, None, Note('F4')),
-			Triad(BareNote('Bb'),'M')
+			(Note('C3'), None, None, Note('E5')),
+			Triad(BareNote('C'),'M')
 		),
 		(
-			(Note('Eb3'), None, None, Note('Eb4')),
-			Triad(BareNote('Eb'),'M')
+			(Note('F'), None, None, Note('D5')),
+			Triad(BareNote('D'),'m')
 		),
 		(
-			(Note('Eb3'), None, None, Note('G4')),
-			Triad(BareNote('Eb'),'M')
+			(Note('G3'), None, None, Note('D5')),
+			Triad(BareNote('G'),'M')
 		),
 		(
-			(Note('Bb2'), None, None, Note('F4')),
-			Triad(BareNote('Bb'),'m')
+			(Note('C3'), None, None, Note('C5')),
+			Triad(BareNote('C'),'M')
 		),
 	)
-	tree = Tree(None, True)
-	main_loop(notes, tree, BareNote("Eb"))
+	main_loop(notes, tree, BareNote("C"))
 	final_results = []
-	def traverse(tree,data,initial=False):
-		if not initial:
-			data += (False) if tree.data == None else (tree.data,)
+	def traverse(tree,data,initial=False): #searches tree for complete solutions
+		if not initial and tree.data != None: #first node has no data
+			data += (tree.data,)
 		if len(tree.children) == 0:
 			final_results.append(list(data))
 		else:
@@ -236,7 +235,9 @@ def main():
 		print(data)
 	traverse(tree,(),initial=True)
 	final_results[:] = [val for val in final_results if len(val) == len(notes)]
-	print("Complete!")
+	print("Complete! Listing solutions with md5 hash:")
+	if len(final_results) == 0:
+		print("No solutions!")
 	for val in final_results:
 		print(val,hashlib.md5(str(val).encode()).hexdigest())
 def main_loop(notes, tree, key_root):
@@ -276,10 +277,10 @@ def checkcrossover(a,b):
 def checkdoubling(notes,triad):
 	double = triad.notes()[0] #default
 	toprint = ""
-	if notes[Voices['bass']].pitch() == triad.note(0).pitch():		
+	if notes[Voices['bass']].pitch() == triad.note(0).pitch():
 		toprint = 'root position: '+str(notes)+", "+str(triad.notes())
 		double = triad.note(0)
-	elif triad.type == 'M' or triad.type == 'm':			
+	elif triad.type == 'M' or triad.type == 'm':
 		if notes[Voices['bass']].pitch() == triad.note(1).pitch():
 			toprint = '1st inversion, major or minor: '+str(notes)+", "+str(triad.notes())
 			double = notes[Voices['soprano']]
@@ -294,9 +295,9 @@ def checkdoubling(notes,triad):
 		return True
 	else:
 		if toprint == "":
-			print('Fail! ?',notes,triad.notes())
+			print('Doubling Error! ?',notes,triad.notes())
 		else:
-			print('Fail!',toprint)
+			print('Doubling Error!',toprint)
 		return False
 def checklargeleaps(a, b, interval):
 	for x in range(0,4):
@@ -305,7 +306,10 @@ def checklargeleaps(a, b, interval):
 			return False
 	return True
 def octaveorless(notes):
-	return notes[Voices['soprano']].num() - notes[Voices['alto']].num() <= BareNote.intervals['P8'] and notes[Voices['alto']].num() - notes[Voices['tenor']].num() <= BareNote.intervals['P8']
+	res = notes[Voices['soprano']].num() - notes[Voices['alto']].num() <= BareNote.intervals['P8'] and notes[Voices['alto']].num() - notes[Voices['tenor']].num() <= BareNote.intervals['P8']
+	if not res:
+		print("Soprano/alto or alto/tenor are more than an octave apart!",notes)
+	return res
 def checkleadingtone(notes, key_root):
 	count = 0
 	for x in range(0,4):
@@ -323,8 +327,4 @@ two_filters = [ # True: success, False: failure
 	["Large leaps", lambda a,b: checklargeleaps(a, b, BareNote.intervals['m6'])],
 ]
 if __name__ == "__main__":
-	#print(checkdoubling([Note('E4'),Note('C4'),Note('G4'),Note('E5')],Triad(BareNote('C'),'M')))
-	#print(BareNote('Ab').pitch())
-	#print(Note('Ab2').pitch())
-	#print(checkleadingtone([Note('E4'),Note('C4'),Note('B4'),Note('B5')],BareNote('C')))
 	main()
