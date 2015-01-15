@@ -134,7 +134,6 @@ class BareNote(CommonEqualityMixin):
 		if "CDEFGAB".index(self.letter())+int(invl[-1]) > 7:
 			carry = True
 		new_pitch = (self.pitch() + BareNote.intervals[invl]) % 12 if carry else (self.pitch() + BareNote.intervals[invl])
-		#print(self.pitch(),BareNote.intervals[invl],new_pitch)
 		return (BareNote([val for val in search(new_pitch) if val.find(target) > -1][0]), 1 if carry else 0)
 	def pitch(self):
 		return BareNote.pitches[self.letter()+self.accidental()]
@@ -195,7 +194,7 @@ class Triad(CommonEqualityMixin):
 		"halfdim7": ["P1", "m3", "d5", "m7"],
 		"aug": ["P1","M3","A5"]
 	}
-	def __init__(self,root,type): #name is like Gm, g, C, CM, e, Em (both forms of minor accepted)
+	def __init__(self,root,type):
 		self.type = type
 		self.root = root
 Ranges = {
