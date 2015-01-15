@@ -64,7 +64,7 @@ import hashlib
 # Determine which paths yield the same amount of 4-note chords as was initially specified
 #
 # How it works:
-# The core of the program is the findAll method. It finds all combinations of a particular triad within the vocal
+# The core of the program is the findall method. It finds all combinations of a particular triad within the vocal
 # ranges for each part. It finds possible notes for each voice and uses the Cartesian product to merge the voices
 # together. All possible doubling arrangements are attempted. After concatenating these initial possiblities,
 # the main loop attempts to match the list of possibiltiies with the user-provided list of notes. It then
@@ -306,8 +306,7 @@ def main():
 	traverse(tree,(),initial=True)
 	final_results[:] = [val for val in final_results if len(val) == len(notes)]
 	print("Complete! Listing solutions with md5 hash:")
-	if len(final_results) == 0:
-		print("No solutions!")
+	print(len(final_results),"complete solutions")
 	for val in final_results:
 		print(val,hashlib.md5(str(val).encode()).hexdigest())
 def main_loop(notes, tree, key_root):
