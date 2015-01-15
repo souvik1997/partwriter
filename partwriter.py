@@ -280,15 +280,15 @@ def main():
 			Triad(BareNote('C'),'M')
 		],
 		[
-			(Note('F3'), None, None, Note('D5')),
+			(Note('F3'), None, None, None),
 			Triad(BareNote('D'),'m')
 		],
 		[
-			(Note('G3'), None, None, Note('D5')),
-			Triad(BareNote('G'),'M')
+			(None, None, None, None),
+			Triad(BareNote('G'),'7')
 		],
 		[
-			(Note('C3'), None, None, Note('C5')),
+			(Note('C3'), None, None, None),
 			Triad(BareNote('C'),'M')
 		],
 	]
@@ -316,7 +316,7 @@ def main_loop(notes, tree, key_root):
 	if len(notes[tree.index][1].notes()) == 3:
 		p = findall(notes[tree.index][1])+findall(notes[tree.index][1],double=1)+findall(notes[tree.index][1],double=2)
 	else:
-		p = findall(notes[tree.index][1])
+		p = findall(notes[tree.index][1],double=-1)
 	if notes[tree.index][0][Voices['bass']] != None:
 		p[:] = [val for val in p if val[Voices['bass']] == notes[tree.index][0][Voices['bass']]]
 	if notes[tree.index][0][Voices['tenor']] != None:
@@ -345,6 +345,8 @@ def checkcrossover(a,b):
 		print("Crossover!",a,b)
 		return False
 def checkdoubling(notes,triad):
+	if len(triad.notes()) != 3:
+		return True
 	double = triad.note(0) #default
 	toprint = ""
 	if notes[Voices['bass']].pitch() == triad.note(0).pitch():
