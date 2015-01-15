@@ -193,36 +193,36 @@ def main():
 	#print(findall(Triad(BareNote("C"),"halfdim7"),double=-1))
 	notes = (
 		(
-			(Note('F#3'), None, None, Note('C#5')),
-			Triad(BareNote('F#'),'m')
+			(Note('Eb3'), None, None, Note('G4')),
+			Triad(BareNote('Eb'),'M')
 		),
 		(
-			(Note('C#3'), None, None, Note('C#5')),
-			Triad(BareNote('C#'),'M')
+			(Note('C3'), None, None, Note('G4')),
+			Triad(BareNote('C'),'m')
 		),
 		(
-			(Note('F#3'), None, None, Note('A4')),
-			Triad(BareNote('F#'),'m')
+			(Note('Ab2'), None, None, Note('Ab4')),
+			Triad(BareNote('Ab'),'M')
 		),
 		(
-			(Note('B2'), None, None, Note('B4')),
-			Triad(BareNote('B'),'m')
+			(Note('Bb2'), None, None, Note('F4')),
+			Triad(BareNote('Bb'),'M')
 		),
 		(
-			(Note('C#3'), None, None, Note('G#4')),
-			Triad(BareNote('C#'),'M')
+			(Note('Eb3'), None, None, Note('Eb4')),
+			Triad(BareNote('Eb'),'M')
 		),
 		(
-			(Note('F#2'), Note('F#3'), None, Note('A4')),
-			Triad(BareNote('F#'),'m')
+			(Note('Eb3'), None, None, Note('G4')),
+			Triad(BareNote('Eb'),'M')
 		),
 		(
-			(Note('C#3'), Note('E#3'), None, Note('G#4')),
-			Triad(BareNote('C#'),'M')
-		)
+			(Note('Bb2'), None, None, Note('F4')),
+			Triad(BareNote('Bb'),'m')
+		),
 	)
 	tree = Tree(None, True)
-	main_loop(notes, tree)
+	main_loop(notes, tree, BareNote('G'))
 	final_results = []
 	def traverse(tree,data,initial=False):
 		if not initial:
@@ -238,7 +238,7 @@ def main():
 	print("Complete!")
 	for val in final_results:
 		print(val)
-def main_loop(notes, tree):
+def main_loop(notes, tree, key):
 	if tree.index >= len(notes):
 		return
 	def checkparallel(a, b, interval):
@@ -254,13 +254,35 @@ def main_loop(notes, tree):
 		else:
 			print("Crossover!",a,b)
 			return False
-	filters = [ # True: success, False: failure
+	def checkdoubling(notes,triad):
+		double = triad.notes[0] #default
+		if notes[Voices['bass']] == triad.notes[0]:
+			double = triad.notes[0]
+		elif triad.type == 'M' or triad.type == 'm':			
+			if notes[Voices['bass']] == triad.notes[1]:
+				double = a[Voices['soprano']]
+		elif triad.type == 'dim' and notes[Voices['bass']] == triad.notes[1]:
+			double = triad.notes[0]
+		doublecount = 0
+		for x in range(0,4):
+			if notes[x].pitch() == double.pitch():
+				doublecount = doublecount + 1
+		return doublecount == 2
+	def checklargeleaps(a, b, interval):
+		for x in range(0,4):
+			if abs(a[x].num()-b[x].num()) >= interval:
+				return False
+		return True
+	def octaveorless(notes):
+		return notes[Voices['soprano']].num() - notes[Voices['alto']].num() <= BareNote.intervals('P8') and notes[Voices['alto']].num() - notes[Voices['tenor']].num() <= BareNote.intervals('P8')
+	two_filters = [ # True: success, False: failure
 		["Parallel P1", lambda a,b: checkparallel(a, b, BareNote.intervals["P1"])],
 		["Parallel P5", lambda a,b: checkparallel(a, b, BareNote.intervals["P5"])],
 		["Parallel P8", lambda a,b: checkparallel(a, b, BareNote.intervals["P8"])],
 		["Check crossover", checkcrossover],
+		["Large leaps", lambda a,b: checklargeleaps(a, b, BareNote.intervals['m6'])],
 	]
-	p = findall(notes[tree.index][1])
+	p = findall(notes[tree.index][1])+findall(notes[tree.index][1],double=1)+findall(notes[tree.index][1],double=2)
 	if notes[tree.index][0][Voices['bass']] != None:
 		p[:] = [val for val in p if val[Voices['bass']] == notes[tree.index][0][Voices['bass']]]
 		#print("Bass filter",p)
@@ -275,9 +297,9 @@ def main_loop(notes, tree):
 		#print("Soprano filter",p)
 	p[:] = [val for val in p if val[Voices['soprano']].num() - val[Voices['alto']].num() <= BareNote.intervals["P8"] and val[Voices['alto']].num() - val[Voices['tenor']].num() <= BareNote.intervals["P8"]] #check spacing
 	if not tree.master:
-		for rule in filters:
+		for rule in two_filters:
 			p[:] = [val for val in p if rule[1](tree.data,val)]
 	for val in p:
-		main_loop(notes,tree.add(val))
+		main_loop(notes,tree.add(val), key)
 if __name__ == "__main__":
 	main()
