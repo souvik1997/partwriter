@@ -328,9 +328,7 @@ def main_loop(notes, tree, key_root):
 	if not tree.master:
 		for rule in two_filters:
 			p[:] = [val for val in p if rule[1](tree.data,val)]
-		p[:] = [val for val in p if checkdoubling(val,notes[tree.index][1])]
-		p[:] = [val for val in p if octaveorless(val)]
-		p[:] = [val for val in p if checkleadingtone(val,key_root)]
+	p[:] = [val for val in p if checkdoubling(val,notes[tree.index][1]) and octaveorless(val) and checkleadingtone(val,key_root)]
 	for val in p:
 		main_loop(notes,tree.add(val), key_root)
 def checkparallel(a, b, interval):
@@ -347,7 +345,7 @@ def checkcrossover(a,b):
 		print("Crossover!",a,b)
 		return False
 def checkdoubling(notes,triad):
-	double = triad.notes()[0] #default
+	double = triad.note(0) #default
 	toprint = ""
 	if notes[Voices['bass']].pitch() == triad.note(0).pitch():
 		toprint = 'root position: '+str(notes)+", "+str(triad.notes())
