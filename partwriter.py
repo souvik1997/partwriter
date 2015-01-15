@@ -73,10 +73,11 @@ import hashlib
 # is added to the parent/child tree as children. Then the main loop recurses and uses each of the children as
 # parent nodes for the next iteration until all user-provided triads have been parsed.
 badness_config = {
+	'threshold':10000000,
 	'parallel': 10000000,
 	'crossover': 10000000,
 	'smoothness': 3, #this is an exponential factor
-	'doubling': 40000,
+	'doubling': 400000,
 	'large leaps': 100000,
 	'octaveorless': 100000,
 	'leading tone': 100000000
@@ -273,32 +274,32 @@ def main():
 	tree = Tree(None, True)
 	notes = [
 		[
-			(Note('D3'), Note('D4'), Note('F#4'), Note('A4')),
-			Triad(BareNote('D'),'M')
+			(Note('C3'), Note('Eb4'), Note('G4'), Note('C5')),
+			Triad(BareNote('C'),'m')
 		],
 		[
-			(Note('F#3'), None, None, Note('D5')),
-			Triad(BareNote('D'),'M')
-		],
-		[
-			(Note('G3'), Note('D4'), Note('G4'), Note('B4')),
+			(Note('B2'), None, None, Note('D5')),
 			Triad(BareNote('G'),'M')
 		],
 		[
-			(Note('D3'), None, None, Note('A4')),
-			Triad(BareNote('D'),'M')
+			(Note('C3'), Note('C4'), Note('G4'), Note('Eb5')),
+			Triad(BareNote('C'),'m')
 		],
 		[
-			(Note('E3'), None, None, Note('G4')),
-			Triad(BareNote('C#'),'dim')
+			(Note('F3'), None, None, Note('D5')),
+			Triad(BareNote('D'),'m')
 		],
 		[
-			(Note('F#3'), None, None, Note('F#4')),
-			Triad(BareNote('D'),'M')
+			(Note('G3'), None, None, Note('C5')),
+			Triad(BareNote('C'),'m')
 		],
 		[
-			(Note('A3'), None, None, Note('E4')),
-			Triad(BareNote('A'),'M')
+			(Note('G3'), None, None, Note('B4')),
+			Triad(BareNote('G'),'M')
+		],
+		[
+			(Note('C3'), None, None, Note('C5')),
+			Triad(BareNote('C'),'m')
 		],
 	]
 	main_loop(notes, tree, BareNote("C"))
@@ -343,8 +344,9 @@ def main_loop(notes, tree, key_root):
 	for val in p:
 		val[1] += checkdoubling(val[0],notes[tree.index][1]) + octaveorless(val[0]) + checkleadingtone(val[0],key_root)
 	for val in p:
-		new_node = tree.add(val[0],val[1])
-		main_loop(notes,new_node, key_root)
+		if val[1] < badness_config['threshold']:
+			new_node = tree.add(val[0],val[1])
+			main_loop(notes,new_node, key_root)
 #Rules:
 def checkparallel(a, b, interval):
 	badness = 10000000 #Very bad!
