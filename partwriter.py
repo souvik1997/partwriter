@@ -68,10 +68,10 @@ import hashlib
 # ranges for each part. It finds possible notes for each voice and uses the Cartesian product to merge the voices
 # together. All possible doubling arrangements are attempted. After concatenating these initial possiblities,
 # the main loop attempts to match the list of possibiltiies with the user-provided list of notes. It then
-# filters the list through the provided rules. Once the final list of possible arrangements is obtained, each
-# 4-note arrangement is added to the parent/child tree as children. If there are no possible arrangements that
-# particular branch of the tree ends. Then the main loop recurses and uses each of the children as parent nodes
-# for the next iteration until all user-provided triads have been parsed.
+# filters the list through the provided rules, adding a 'badness' factor which is an indicator of how bad a
+# particular arrangement is. Once the final list of possible arrangements is obtained, each 4-note arrangement
+# is added to the parent/child tree as children. Then the main loop recurses and uses each of the children as
+# parent nodes for the next iteration until all user-provided triads have been parsed.
 badness_config = {
 	'parallel': 10000000,
 	'crossover': 10000000,
