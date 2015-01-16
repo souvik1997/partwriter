@@ -377,7 +377,7 @@ def main_loop(notes, tree, key_root):
 			main_loop(notes,new_node, key_root)
 #Rules:
 def checkparallel(a, b, interval):
-	badness = 10000000 #Very bad!
+	badness = badness_config['parallel'] #Very bad!
 	for x in range(0,len(a)):
 		for y in range(x+1,len(a)):
 			if a[y].num()-a[x].num() == interval and b[y].num()-b[x].num() == interval and a[y].num() != b[y].num() and a[x].num() != b[x].num():
