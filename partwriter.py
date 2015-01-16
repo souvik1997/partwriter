@@ -1,6 +1,20 @@
-import itertools
-import functools
-import hashlib
+
+# partwriter.py - Automated part writing for four-part harmony
+# Copyright (C) 2015 Souvik Banerjee
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 # Supports the following rules:
 # Keep all voices in range
 # Avoid parallel 5ths, octaves, and unisons
@@ -12,6 +26,8 @@ import hashlib
 # Avoid large leaps of a 6th or more. Octave leaps are ok
 # Maintain an octave or less between soprano and alto and between alto and tenor
 # Do not crossover/overlap voices
+# Avoid tritones
+# Have each part flow smoothly (minimize skips)
 #
 # Notes are specified in an array format (TODO: read from a file or command line)
 # `None` is a wildcard; the program attempts to get the values of these `None`s. The notes that are specified
@@ -72,6 +88,9 @@ import hashlib
 # particular arrangement is. Once the final list of possible arrangements is obtained, each 4-note arrangement
 # is added to the parent/child tree as children. Then the main loop recurses and uses each of the children as
 # parent nodes for the next iteration until all user-provided triads have been parsed.
+import itertools
+import functools
+import hashlib
 badness_config = {
 	'threshold':10000000/4,
 	'parallel': 10000000,
@@ -444,7 +463,7 @@ two_filters = [ # True: success, False: failure
 	["Check crossover", checkcrossover],
 	["Large leaps", lambda a,b: checklargeleaps(a, b, BareNote.intervals['m6'])],
 	["Smoothness", checksmoothness],
-	["A2/A4",check_a4]
+	["A4",check_a4]
 ]
 if __name__ == "__main__":
 	main()
