@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python3
 # partwriter.py - Automated part writing for four-part harmony
 # Copyright (C) 2015 Souvik Banerjee
 #
