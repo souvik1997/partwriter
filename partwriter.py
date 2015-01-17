@@ -43,16 +43,17 @@
 import itertools
 import functools
 import hashlib
+import argparse
 badness_config = {
-	'threshold':10000000/4,
-	'parallel': 10000000,
-	'crossover': 10000000,
-	'smoothness': lambda a: pow(3,a),
-	'doubling': 10000000/4,
-	'largeleaps': 10000000/2,
-	'octaveorless': 10000000/2,
-	'leadingtone': 10000000,
-	'tritone':10000000
+	'threshold':"2500000",
+	'parallel': "10000000",
+	'crossover': "10000000",
+	'smoothness': "lambda a: pow(2,a)",
+	'doubling': "2500000",
+	'largeleaps': "5000000",
+	'octaveorless': "5000000",
+	'leadingtone': "10000000",
+	'tritone':"10000000"
 }
 class CommonEqualityMixin(object):
 	def __eq__(self, other):
@@ -254,7 +255,16 @@ def main():
 	tree = Tree(None, True)
 	notes = []
 	key = None
-	with open('input','r') as f:
+	parser = argparse.ArgumentParser(description='Automated part writing for four-part harmony')
+	parser.add_argument('-v','--verbose',action='store_true')
+	parser.add_argument('input',help="input text file", type=argparse.FileType('r'))
+	for k,v in badness_config.items():
+		print(k)
+		parser.add_argument("--"+k,help="badness value for "+k,default=v)
+	args = parser.parse_args()
+	for k in badness_config:
+		badness_config[k] = eval('args.'+k)
+	with args.input as f:
 		first_line = f.readline().strip()
 		key = BareNote(first_line)
 		lines = f.readlines()
@@ -316,12 +326,12 @@ def main_loop(notes, tree, key_root):
 		for val in p:
 			val[1] += rule[1](val[0],notes[tree.index][1],key_root)
 	for val in p:
-		if val[1] < badness_config['threshold']:
+		if val[1] < int(badness_config['threshold']):
 			new_node = tree.add(val[0],val[1])
 			main_loop(notes,new_node, key_root)
 #Rules:
 def checkparallel(a, b, interval):
-	badness = badness_config['parallel'] #Very bad!
+	badness = int(badness_config['parallel']) #Very bad!
 	for x in range(0,len(a)):
 		for y in range(x+1,len(a)):
 			if a[y].num()-a[x].num() == interval and b[y].num()-b[x].num() == interval and a[y].num() != b[y].num() and a[x].num() != b[x].num():
@@ -329,7 +339,7 @@ def checkparallel(a, b, interval):
 				return badness
 	return 0
 def checkcrossover(a,b):
-	badness = badness_config['crossover'] #Very bad!
+	badness = int(badness_config['crossover']) #Very bad!
 	if b[Voices['tenor']] >= a[Voices['bass']] and b[Voices['tenor']] <= a[Voices['alto']] and b[Voices['alto']] >= a[Voices['tenor']] and  b[Voices['alto']] <= a[Voices['soprano']]:
 		return 0
 	else:
@@ -338,10 +348,10 @@ def checkcrossover(a,b):
 def checksmoothness(a,b):
 	badness = 0
 	for x in range(0,4):
-		badness += badness_config['smoothness'](abs(a[x].num()-b[x].num()))
+		badness += eval(badness_config['smoothness'])(abs(a[x].num()-b[x].num()))
 	return badness
 def checkdoubling(notes,triad):
-	badness = badness_config['doubling']
+	badness = int(badness_config['doubling'])
 	if len(triad.notes()) != 3:
 		return 0
 	double = notes[Voices['bass']] #default is the bass
@@ -369,28 +379,28 @@ def checkdoubling(notes,triad):
 			print('Doubling Error!',toprint)
 		return badness
 def checklargeleaps(a, b, interval):
-	badness = badness_config['largeleaps']
+	badness = int(badness_config['largeleaps'])
 	for x in range(0,4):
 		if abs(a[x].num()-b[x].num()) >= interval and abs(a[x].num()-b[x].num()) != BareNote.intervals['P8']:
 			print("Large leap!",a,b)
 			return badness
 	return 0
 def check_tritone(a,b):
-	badness = badness_config['tritone']
+	badness = int(badness_config['tritone'])
 	for x in range(0,4):
 		if abs(a[x].num()-b[x].num()) == BareNote.intervals["A4"]:
 			print("Tritone!",a,b)
 			return badness
 	return 0
 def octaveorless(notes):
-	badness = badness_config['octaveorless']
+	badness = int(badness_config['octaveorless'])
 	res = notes[Voices['soprano']].num() - notes[Voices['alto']].num() <= BareNote.intervals['P8'] and notes[Voices['alto']].num() - notes[Voices['tenor']].num() <= BareNote.intervals['P8']
 	if not res:
 		print("Soprano/alto or alto/tenor are more than an octave apart!",notes)
 		return badness
 	return 0
 def checkleadingtone(notes, key_root):
-	badness = badness_config['leadingtone']
+	badness = int(badness_config['leadingtone'])
 	count = 0
 	for x in range(0,4):
 		if notes[x].pitch() == key_root.ascending_interval("M7")[0].pitch():
