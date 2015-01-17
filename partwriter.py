@@ -15,19 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Supports the following rules:
-# Keep all voices in range
-# Avoid parallel 5ths, octaves, and unisons
-# Never double leading tone
-# Double root when triad is in root position
-# Double soprano when major/minor triads are in first inversion
-# Double bass when diminished triads are in first inversion
-# All factors of triads should be present
-# Avoid large leaps of a 6th or more. Octave leaps are ok
-# Maintain an octave or less between soprano and alto and between alto and tenor
-# Do not crossover/overlap voices
-# Avoid tritones
-# Have each part flow smoothly (minimize skips)
+#
 #
 #
 #
@@ -261,14 +249,65 @@ def main():
 	tree = Tree(None, True)
 	notes = []
 	key = None
-	parser = argparse.ArgumentParser(description='Automated part writing for four-part harmony.', epilog='Copyright (c) 2015 Souvik Banerjee. Released under GNU AGPLv3')
+	parser = argparse.ArgumentParser(description='''
+Automated part writing for four-part harmony.
+Supports the following rules:
+  Keep all voices in range
+  Avoid parallel 5ths, octaves, and unisons
+  Never double leading tone
+  Double root when triad is in root position
+  Double soprano when major/minor triads are in first inversion
+  Double bass when diminished triads are in first inversion
+  All factors of triads should be present
+  Avoid large leaps of a 6th or more. Octave leaps are ok
+  Maintain an octave or less between soprano and alto and between alto and tenor
+  Do not crossover/overlap voices
+  Avoid tritones
+  Have each part flow smoothly (minimize skips)
+
+Input files have the following format:
+  Key: <note>
+  [Notes]
+  <bass>,<tenor>,<alto>,<soprano>,<triad root>:<triad type>
+  <bass>,<tenor>,<alto>,<soprano>,<triad root>:<triad type>
+  <bass>,<tenor>,<alto>,<soprano>,<triad root>:<triad type>
+  ...
+
+An example input file:
+  Key: C
+  [Notes]
+  C3,  , G4,   , C:M
+  C3,  , E4,   , C:M
+    ,  ,   , D5, D:m
+    ,  ,   , D5, G:M
+    ,  ,   , C5, F:M
+    ,  ,   , C5, C:M
+
+The octave only needs to be specified for the bass, tenor, alto,
+and soprano notes in the input file. The triad root and the key
+should not have an octave specifier. The program will attempt to
+find the best combination of notes to fill in the blanks. Spaces
+and tabs are ignored, so they may be used for formatting.
+
+You may specify how to weight infractions of the rules using 'badness' factors
+(like in TeX) through command line arguments. The only exception is the calculation
+of the badness value for smoothness. You can specify a python-style lambda on the
+command line that will be used to calculate the badness value. The lambda should
+take one argument and return an integer.
+
+This program has a simple progress indicator to let you know that it is working.
+Depending on the number of blanks given as input, the execution time will vary.
+Before exiting, all possible solutions will be printed to the console, ranked from
+the worst solution to the best (so that the best is on the bottom and can be read
+on a terminal without scrolling up).
+''', formatter_class=argparse.RawDescriptionHelpFormatter, epilog='Copyright (c) 2015 Souvik Banerjee. Released under GNU AGPLv3')
 	parser.add_argument('-v','--verbose',action='store_true')
-	parser.add_argument('inputfile',help="input text file", type=argparse.FileType('r'))
+	parser.add_argument('inputfile',help="Input file", type=argparse.FileType('r'))
 	for k,v in badness_config.items():
 		if k == "smoothness":
-			parser.add_argument("--"+k,help="badness function (as python lambda) for "+k,default=v)
+			parser.add_argument("--"+k,help="badness function (as python lambda) for "+k+"(default: '%(default)s')",default=v)
 		else:
-			parser.add_argument("--"+k,help="badness value for "+k,default=v)
+			parser.add_argument("--"+k,help="badness value for "+k+"(default: '%(default)s')",default=v)
 	args = parser.parse_args()
 	for k in badness_config:
 		badness_config[k] = eval('args.'+k)
@@ -277,10 +316,13 @@ def main():
 	else:
 		logging.basicConfig(level=logging.INFO, format='%(message)s')
 	with args.inputfile as f:
-		first_line = f.readline().strip()
+		first_line = f.readline().replace("Key:","").strip()
 		key = BareNote(first_line)
 		lines = f.readlines()
 		for l in lines:
+			if len(l.strip()) == 0 or l.strip() == "[Notes]":
+				continue
+			l=l.replace("-"," ")
 			ns = l.split(",") #should be 5 elements (bass,tenor,alto,soprano,triad)
 			val = [None, None, None, None]
 			if ns[Voices['bass']].strip() != "":
