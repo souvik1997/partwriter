@@ -299,7 +299,8 @@ This program has a simple progress indicator to let you know that it is working.
 Depending on the number of blanks given as input, the execution time will vary.
 Before exiting, all possible solutions will be printed to the console, ranked from
 the worst solution to the best (so that the best is on the bottom and can be read
-on a terminal without scrolling up).
+on a terminal without scrolling up). The badness factor and a partial MD5 hash will
+also be printed in order to easily differentiate between solutions.
 ''', formatter_class=argparse.RawDescriptionHelpFormatter, epilog='Copyright (c) 2015 Souvik Banerjee. Released under GNU AGPLv3')
 	parser.add_argument('-v','--verbose',action='store_true')
 	parser.add_argument('inputfile',help="Input file", type=argparse.FileType('r'))
