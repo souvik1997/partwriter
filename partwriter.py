@@ -252,8 +252,11 @@ def findall(tr, double=0, norepeat=False): #note range, triad, given notes (as a
 	else:
 		data = [sorted(val) for val in itertools.product(*results)]
 	return  uniq([val for val in data if len(val) == 4 and val[0] >= Ranges["bass"][0] and val[0] <= Ranges["bass"][1] and val[1] >= Ranges["tenor"][0] and val[1] <= Ranges["tenor"][1] and val[2] >= Ranges["alto"][0] and val[0] <= Ranges["alto"][1] and val[3] >= Ranges["soprano"][0] and val[0] <= Ranges["soprano"][1]])
+progress = 0
+def update_progress():
+	progress += 1
+	print(".",end="")
 def main():
-	print("Starting...")
 	tree = Tree(None, True)
 	notes = []
 	key = None
@@ -287,6 +290,7 @@ def main():
 			triad_note,triad_type = ns[Voices['soprano']+1].split(":")
 			tr = Triad(BareNote(triad_note.strip()),triad_type.strip())
 			notes.append([val,tr])
+	print("Starting...")
 	main_loop(notes, tree, key)
 	final_results = []
 	def traverse(tree,data,initial=False): #searches tree for complete solutions
