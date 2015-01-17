@@ -293,7 +293,8 @@ You may specify how to weight infractions of the rules using 'badness' factors
 (like in TeX) through command line arguments. The only exception is the
 calculation of the badness value for smoothness. You can specify a
 python-style lambda on the command line that will be used to calculate the
-badness value. The lambda should take one argument and return an integer.
+badness value. The lambda should take one argument and return an integer. Once
+the badness value of a solution crosses the threshold it is discarded.
 
 This program has a simple progress indicator to let you know that it is working.
 Depending on the number of blanks given as input, the execution time will vary.
@@ -307,9 +308,9 @@ solutions.
 	parser.add_argument('inputfile',help="Input file", type=argparse.FileType('r'))
 	for k,v in badness_config.items():
 		if k == "smoothness":
-			parser.add_argument("--"+k,help="badness function (as python lambda) for "+k+"(default: '%(default)s')",default=v)
+			parser.add_argument("--"+k,help="badness function (as python lambda) for "+k+" (default: '%(default)s')",default=v)
 		else:
-			parser.add_argument("--"+k,help="badness value for "+k+"(default: '%(default)s')",default=v)
+			parser.add_argument("--"+k,help="badness value for "+k+" (default: '%(default)s')",default=v)
 	args = parser.parse_args()
 	for k in badness_config:
 		badness_config[k] = eval('args.'+k)
