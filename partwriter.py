@@ -29,55 +29,7 @@
 # Avoid tritones
 # Have each part flow smoothly (minimize skips)
 #
-# Notes are specified in an array format (TODO: read from a file or command line)
-# `None` is a wildcard; the program attempts to get the values of these `None`s. The notes that are specified
-# explicitly are fixed.
-# Format of array:
-#	[
-#		[
-#			Four Note()s in an array,
-#			Triad
-#		],
-#	]
-# Example:
-#  notes = [
-#	 	[
-#	 		(Note('G3'), None, None, Note('B4')),
-#	 		Triad(BareNote('G'),'M')
-#	 	],
-#	 	[
-#	 		(Note('C3'), None, None, Note('C5')),
-#	 		Triad(BareNote('C'),'M')
-#	 	],
-#	 	[
-#	 		(Note('B2'), None, None, Note('D5')),
-#	 		Triad(BareNote('G'),'M')
-#	 	],
-#	 	[
-#	 		(Note('C3'), None, None, Note('E5')),
-#	 		Triad(BareNote('C'),'M')
-#	 	],
-#	 	[
-#	 		(Note('F3'), None, None, Note('D5')),
-#	 		Triad(BareNote('D'),'m')
-#	 	],
-#	 	[
-#	 		(Note('G3'), None, None, Note('D5')),
-#	 		Triad(BareNote('G'),'M')
-#	 	],
-#	 	[
-#	 		(Note('C3'), None, None, Note('C5')),
-#	 		Triad(BareNote('C'),'M')
-#	 	],
-#	 ]
-# Then create a parent/child tree:
-#  tree = Tree(None, True)
-# Determine the key of the selection:
-#  key = BareNote('C') #for the key of C (Major/minor does not matter; this is used to determine the leading tone)
-# Start the recursive loop:
-#  main_loop(notes, tree, key)
-# Traverse the tree. The parent node will have no data but will (most likely) have several children
-# Determine which paths yield the same amount of 4-note chords as was initially specified
+#
 #
 # How it works:
 # The core of the program is the findall method. It finds all combinations of a particular triad within the vocal
@@ -95,7 +47,7 @@ badness_config = {
 	'threshold':10000000/4,
 	'parallel': 10000000,
 	'crossover': 10000000,
-	'smoothness': 3, #this is an exponential factor
+	'smoothness': lambda a: pow(3,a),
 	'doubling': 10000000/4,
 	'largeleaps': 10000000/2,
 	'octaveorless': 10000000/2,
@@ -231,6 +183,10 @@ class Triad(CommonEqualityMixin):
 	def __init__(self,root,type):
 		self.type = type
 		self.root = root
+	def __str__(self):
+		return str(self.notes())
+	def __repr__(self):
+		return self.__str__()
 Ranges = {
 	"bass":[Note("C2"),Note("C4")],
 	"tenor":[Note("C3"),Note("G4")],
@@ -296,41 +252,28 @@ def findall(tr, double=0, norepeat=False): #note range, triad, given notes (as a
 	return  uniq([val for val in data if len(val) == 4 and val[0] >= Ranges["bass"][0] and val[0] <= Ranges["bass"][1] and val[1] >= Ranges["tenor"][0] and val[1] <= Ranges["tenor"][1] and val[2] >= Ranges["alto"][0] and val[0] <= Ranges["alto"][1] and val[3] >= Ranges["soprano"][0] and val[0] <= Ranges["soprano"][1]])
 def main():
 	tree = Tree(None, True)
-	notes = [
-		[
-			(Note('A2'), Note('A3'), Note('E4'), Note('C#5')),
-			Triad(BareNote('A'),'M')
-		],
-		[
-			(Note('D3'), None, None, Note('D5')),
-			Triad(BareNote('D'),'m')
-		],
-		[
-			(Note('C#3'), None, None, Note('E5')),
-			Triad(BareNote('A'),'M')
-		],
-		[
-			(Note('D3'), Note('A3'), Note('F4'), Note('D5')),
-			Triad(BareNote('D'),'m')
-		],
-		[
-			(Note('Bb2'), None, None, Note('D5')),
-			Triad(BareNote('G'),'m')
-		],
-		[
-			(Note('A2'), None, None, Note('F5')),
-			Triad(BareNote('D'),'m')
-		],
-		[
-			(Note('A2'), None, None, Note('E5')),
-			Triad(BareNote('A'),'M')
-		],
-		[
-			(Note('D3'), None, None, Note('D5')),
-			Triad(BareNote('D'),'m')
-		],
-	]
-	main_loop(notes, tree, BareNote("D"))
+	notes = []
+	key = None
+	with open('input','r') as f:
+		first_line = f.readline().strip()
+		key = BareNote(first_line)
+		lines = f.readlines()
+		for l in lines:
+			ns = l.split(",") #should be 5 elements (bass,tenor,alto,soprano,triad)
+			val = [None, None, None, None]
+			print(ns)
+			if ns[Voices['bass']].strip() != "":
+				val[Voices['bass']] = Note(ns[Voices['bass']].strip())
+			if ns[Voices['tenor']].strip() != "":
+				val[Voices['tenor']] = Note(ns[Voices['tenor']].strip())
+			if ns[Voices['alto']].strip() != "":
+				val[Voices['alto']] = Note(ns[Voices['alto']].strip())
+			if ns[Voices['soprano']].strip() != "":
+				val[Voices['soprano']] = Note(ns[Voices['soprano']].strip())
+			triad_note,triad_type = ns[Voices['soprano']+1].split(":")
+			tr = Triad(BareNote(triad_note.strip()),triad_type.strip())
+			notes.append([val,tr])
+	main_loop(notes, tree, key)
 	final_results = []
 	def traverse(tree,data,initial=False): #searches tree for complete solutions
 		if not initial and tree.data != None: #first node has no data
@@ -371,7 +314,7 @@ def main_loop(notes, tree, key_root):
 				val[1] += rule[1](tree.data,val[0])
 	for rule in one_filters:
 		for val in p:
-			val[1] += rule[1](val[0],notes[tree.index][1],key_root) #checkdoubling(val[0],notes[tree.index][1]) + octaveorless(val[0]) + checkleadingtone(val[0],key_root)
+			val[1] += rule[1](val[0],notes[tree.index][1],key_root)
 	for val in p:
 		if val[1] < badness_config['threshold']:
 			new_node = tree.add(val[0],val[1])
@@ -395,7 +338,7 @@ def checkcrossover(a,b):
 def checksmoothness(a,b):
 	badness = 0
 	for x in range(0,4):
-		badness += pow(badness_config['smoothness'],abs(a[x].num() - b[x].num()))
+		badness += badness_config['smoothness'](abs(a[x].num()-b[x].num()))
 	return badness
 def checkdoubling(notes,triad):
 	badness = badness_config['doubling']
@@ -462,7 +405,6 @@ one_filters = [ #notes, triad, key
 	["Octave or less", lambda a,b,c: octaveorless(a)],
 	["Leading tone", lambda a,b,c: checkleadingtone(a,c)],
 ]
-
 two_filters = [ # notes #1, notes #2
 	["Parallel P1", lambda a,b: checkparallel(a, b, BareNote.intervals["P1"])],
 	["Parallel P5", lambda a,b: checkparallel(a, b, BareNote.intervals["P5"])],
