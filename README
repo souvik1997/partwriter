@@ -1,8 +1,8 @@
-usage: partwriter.py [-h] [-v] [--smoothness SMOOTHNESS] [--parallel PARALLEL]
+usage: partwriter.py [-h] [-v] [--tritone TRITONE] [--threshold THRESHOLD]
                      [--largeleaps LARGELEAPS] [--crossover CROSSOVER]
-                     [--octaveorless OCTAVEORLESS] [--doubling DOUBLING]
-                     [--threshold THRESHOLD] [--tritone TRITONE]
-                     [--leadingtone LEADINGTONE]
+                     [--octaveorless OCTAVEORLESS] [--leadingtone LEADINGTONE]
+                     [--parallel PARALLEL] [--smoothness SMOOTHNESS]
+                     [--doubling DOUBLING]
                      inputfile
 
 Automated part writing for four-part harmony.
@@ -45,17 +45,18 @@ find the best combination of notes to fill in the blanks. Spaces
 and tabs are ignored, so they may be used for formatting.
 
 You may specify how to weight infractions of the rules using 'badness' factors
-(like in TeX) through command line arguments. The only exception is the calculation
-of the badness value for smoothness. You can specify a python-style lambda on the
-command line that will be used to calculate the badness value. The lambda should
-take one argument and return an integer.
+(like in TeX) through command line arguments. The only exception is the
+calculation of the badness value for smoothness. You can specify a
+python-style lambda on the command line that will be used to calculate the
+badness value. The lambda should take one argument and return an integer.
 
 This program has a simple progress indicator to let you know that it is working.
 Depending on the number of blanks given as input, the execution time will vary.
-Before exiting, all possible solutions will be printed to the console, ranked from
-the worst solution to the best (so that the best is on the bottom and can be read
-on a terminal without scrolling up). The badness factor and a partial MD5 hash will
-also be printed in order to easily differentiate between solutions.
+Before exiting, all possible solutions will be printed to the console, ranked
+from the worst solution to the best (so that the best is on the bottom and can
+be read on a terminal without scrolling up). The badness factor and a partial
+MD5 hash will also be printed in order to easily differentiate between
+solutions.
 
 positional arguments:
   inputfile             Input file
@@ -63,21 +64,21 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -v, --verbose
-  --smoothness SMOOTHNESS
-                        badness function (as python lambda) for
-                        smoothness(default: 'lambda a: pow(2,a)')
-  --parallel PARALLEL   badness value for parallel(default: '10000000')
+  --tritone TRITONE     badness value for tritone(default: '10000000')
+  --threshold THRESHOLD
+                        badness value for threshold(default: '2500000')
   --largeleaps LARGELEAPS
                         badness value for largeleaps(default: '5000000')
   --crossover CROSSOVER
                         badness value for crossover(default: '10000000')
   --octaveorless OCTAVEORLESS
                         badness value for octaveorless(default: '5000000')
-  --doubling DOUBLING   badness value for doubling(default: '2500000')
-  --threshold THRESHOLD
-                        badness value for threshold(default: '2500000')
-  --tritone TRITONE     badness value for tritone(default: '10000000')
   --leadingtone LEADINGTONE
                         badness value for leadingtone(default: '10000000')
+  --parallel PARALLEL   badness value for parallel(default: '10000000')
+  --smoothness SMOOTHNESS
+                        badness function (as python lambda) for
+                        smoothness(default: 'lambda a: pow(2,a)')
+  --doubling DOUBLING   badness value for doubling(default: '2500000')
 
 Copyright (c) 2015 Souvik Banerjee. Released under GNU AGPLv3
