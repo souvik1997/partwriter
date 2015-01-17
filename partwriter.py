@@ -97,10 +97,10 @@ badness_config = {
 	'crossover': 10000000,
 	'smoothness': 3, #this is an exponential factor
 	'doubling': 10000000/4,
-	'large leaps': 10000000/2,
+	'largeleaps': 10000000/2,
 	'octaveorless': 10000000/2,
-	'leading tone': 10000000,
-	'a4':10000000
+	'leadingtone': 10000000,
+	'tritone':10000000
 }
 class CommonEqualityMixin(object):
 	def __eq__(self, other):
@@ -369,8 +369,9 @@ def main_loop(notes, tree, key_root):
 		for rule in two_filters:
 			for val in p:
 				val[1] += rule[1](tree.data,val[0])
-	for val in p:
-		val[1] += checkdoubling(val[0],notes[tree.index][1]) + octaveorless(val[0]) + checkleadingtone(val[0],key_root)
+	for rule in one_filters:
+		for val in p:
+			val[1] += rule[1](val[0],notes[tree.index][1],key_root) #checkdoubling(val[0],notes[tree.index][1]) + octaveorless(val[0]) + checkleadingtone(val[0],key_root)
 	for val in p:
 		if val[1] < badness_config['threshold']:
 			new_node = tree.add(val[0],val[1])
@@ -425,17 +426,17 @@ def checkdoubling(notes,triad):
 			print('Doubling Error!',toprint)
 		return badness
 def checklargeleaps(a, b, interval):
-	badness = badness_config['large leaps']
+	badness = badness_config['largeleaps']
 	for x in range(0,4):
 		if abs(a[x].num()-b[x].num()) >= interval and abs(a[x].num()-b[x].num()) != BareNote.intervals['P8']:
 			print("Large leap!",a,b)
 			return badness
 	return 0
-def check_a4(a,b):
-	badness = badness_config['a4']
+def check_tritone(a,b):
+	badness = badness_config['tritone']
 	for x in range(0,4):
 		if abs(a[x].num()-b[x].num()) == BareNote.intervals["A4"]:
-			print("A4!",a,b)
+			print("Tritone!",a,b)
 			return badness
 	return 0
 def octaveorless(notes):
@@ -446,7 +447,7 @@ def octaveorless(notes):
 		return badness
 	return 0
 def checkleadingtone(notes, key_root):
-	badness = badness_config['leading tone']
+	badness = badness_config['leadingtone']
 	count = 0
 	for x in range(0,4):
 		if notes[x].pitch() == key_root.ascending_interval("M7")[0].pitch():
@@ -456,14 +457,20 @@ def checkleadingtone(notes, key_root):
 	else:
 		print("Too many leading tones!",notes)
 		return badness
-two_filters = [ # True: success, False: failure
+one_filters = [ #notes, triad, key
+	["Doubling", lambda a,b,c: checkdoubling(a,b)],
+	["Octave or less", lambda a,b,c: octaveorless(a)],
+	["Leading tone", lambda a,b,c: checkleadingtone(a,c)],
+]
+
+two_filters = [ # notes #1, notes #2
 	["Parallel P1", lambda a,b: checkparallel(a, b, BareNote.intervals["P1"])],
 	["Parallel P5", lambda a,b: checkparallel(a, b, BareNote.intervals["P5"])],
 	["Parallel P8", lambda a,b: checkparallel(a, b, BareNote.intervals["P8"])],
 	["Check crossover", checkcrossover],
 	["Large leaps", lambda a,b: checklargeleaps(a, b, BareNote.intervals['m6'])],
 	["Smoothness", checksmoothness],
-	["A4",check_a4]
+	["Tritone",check_tritone]
 ]
 if __name__ == "__main__":
 	main()
