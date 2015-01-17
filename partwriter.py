@@ -44,6 +44,7 @@ import itertools
 import functools
 import hashlib
 import argparse
+import logging
 badness_config = {
 	'threshold':"2500000",
 	'parallel': "10000000",
@@ -252,6 +253,7 @@ def findall(tr, double=0, norepeat=False): #note range, triad, given notes (as a
 		data = [sorted(val) for val in itertools.product(*results)]
 	return  uniq([val for val in data if len(val) == 4 and val[0] >= Ranges["bass"][0] and val[0] <= Ranges["bass"][1] and val[1] >= Ranges["tenor"][0] and val[1] <= Ranges["tenor"][1] and val[2] >= Ranges["alto"][0] and val[0] <= Ranges["alto"][1] and val[3] >= Ranges["soprano"][0] and val[0] <= Ranges["soprano"][1]])
 def main():
+	print("Starting...")
 	tree = Tree(None, True)
 	notes = []
 	key = None
@@ -259,11 +261,14 @@ def main():
 	parser.add_argument('-v','--verbose',action='store_true')
 	parser.add_argument('input',help="input text file", type=argparse.FileType('r'))
 	for k,v in badness_config.items():
-		print(k)
 		parser.add_argument("--"+k,help="badness value for "+k,default=v)
 	args = parser.parse_args()
 	for k in badness_config:
 		badness_config[k] = eval('args.'+k)
+	if args.verbose:
+		logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+	else:
+		logging.basicConfig(level=logging.INFO, format='%(message)s')
 	with args.input as f:
 		first_line = f.readline().strip()
 		key = BareNote(first_line)
@@ -271,7 +276,6 @@ def main():
 		for l in lines:
 			ns = l.split(",") #should be 5 elements (bass,tenor,alto,soprano,triad)
 			val = [None, None, None, None]
-			print(ns)
 			if ns[Voices['bass']].strip() != "":
 				val[Voices['bass']] = Note(ns[Voices['bass']].strip())
 			if ns[Voices['tenor']].strip() != "":
@@ -293,7 +297,7 @@ def main():
 		else:
 			for c in tree.children:
 				traverse(c,data)
-		print(data)
+		logging.debug("%s",data)
 	traverse(tree,(),initial=True)
 	final_results[:] = [val for val in final_results if len(val[1]) == len(notes)] #sanity check
 	final_results.sort(key=lambda a: a[0],reverse=True)
@@ -301,7 +305,7 @@ def main():
 	print("Format: badness, notes, hash")
 	print(len(final_results),"complete solutions")
 	for val in final_results:
-		print(val[0],val[1],hashlib.md5(str(val).encode()).hexdigest())
+		print(val[0],val[1],hashlib.md5(str(val[1]).encode()).hexdigest())
 def main_loop(notes, tree, key_root):
 	if tree.index >= len(notes):
 		return
@@ -335,7 +339,7 @@ def checkparallel(a, b, interval):
 	for x in range(0,len(a)):
 		for y in range(x+1,len(a)):
 			if a[y].num()-a[x].num() == interval and b[y].num()-b[x].num() == interval and a[y].num() != b[y].num() and a[x].num() != b[x].num():
-				print("Parallel "+str(interval)+" detected", a, b)
+				logging.debug("Parallel %s detected: %s %s", str(interval), a, b)
 				return badness
 	return 0
 def checkcrossover(a,b):
@@ -343,7 +347,7 @@ def checkcrossover(a,b):
 	if b[Voices['tenor']] >= a[Voices['bass']] and b[Voices['tenor']] <= a[Voices['alto']] and b[Voices['alto']] >= a[Voices['tenor']] and  b[Voices['alto']] <= a[Voices['soprano']]:
 		return 0
 	else:
-		print("Crossover!",a,b)
+		logging.debug("Crossover! %s %s",a,b)
 		return badness
 def checksmoothness(a,b):
 	badness = 0
@@ -374,29 +378,29 @@ def checkdoubling(notes,triad):
 		return 0
 	else:
 		if toprint == "":
-			print('Doubling Error! ?',notes,triad.notes())
+			logging.debug('Doubling Error! ? %s %s',notes,triad.notes())
 		else:
-			print('Doubling Error!',toprint)
+			logging.debug('Doubling Error! %s',toprint)
 		return badness
 def checklargeleaps(a, b, interval):
 	badness = int(badness_config['largeleaps'])
 	for x in range(0,4):
 		if abs(a[x].num()-b[x].num()) >= interval and abs(a[x].num()-b[x].num()) != BareNote.intervals['P8']:
-			print("Large leap!",a,b)
+			logging.debug("Large leap! %s %s",a,b)
 			return badness
 	return 0
 def check_tritone(a,b):
 	badness = int(badness_config['tritone'])
 	for x in range(0,4):
 		if abs(a[x].num()-b[x].num()) == BareNote.intervals["A4"]:
-			print("Tritone!",a,b)
+			logging.debug("Tritone! %s %s",a,b)
 			return badness
 	return 0
 def octaveorless(notes):
 	badness = int(badness_config['octaveorless'])
 	res = notes[Voices['soprano']].num() - notes[Voices['alto']].num() <= BareNote.intervals['P8'] and notes[Voices['alto']].num() - notes[Voices['tenor']].num() <= BareNote.intervals['P8']
 	if not res:
-		print("Soprano/alto or alto/tenor are more than an octave apart!",notes)
+		logging.debug("Soprano/alto or alto/tenor are more than an octave apart! %s",notes)
 		return badness
 	return 0
 def checkleadingtone(notes, key_root):
@@ -408,7 +412,7 @@ def checkleadingtone(notes, key_root):
 	if count < 2:
 		return 0
 	else:
-		print("Too many leading tones!",notes)
+		logging.debug("Too many leading tones! %s",notes)
 		return badness
 one_filters = [ #notes, triad, key
 	["Doubling", lambda a,b,c: checkdoubling(a,b)],
