@@ -311,7 +311,7 @@ def main():
 	print("Format: badness, notes, hash")
 	print(len(final_results),"complete solutions")
 	for val in final_results:
-		print(val[0],val[1],hashlib.md5(str(val[1]).encode()).hexdigest())
+		print(val[0],val[1],hashlib.md5(str(val[1]).encode()).hexdigest()[:7])
 def main_loop(notes, tree, key_root):
 	update_progress()
 	if tree.index >= len(notes):
