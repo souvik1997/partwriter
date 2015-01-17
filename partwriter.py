@@ -261,11 +261,14 @@ def main():
 	tree = Tree(None, True)
 	notes = []
 	key = None
-	parser = argparse.ArgumentParser(description='Automated part writing for four-part harmony')
+	parser = argparse.ArgumentParser(description='Automated part writing for four-part harmony.', epilog='Copyright (c) 2015 Souvik Banerjee. Released under GNU AGPLv3')
 	parser.add_argument('-v','--verbose',action='store_true')
-	parser.add_argument('input',help="input text file", type=argparse.FileType('r'))
+	parser.add_argument('inputfile',help="input text file", type=argparse.FileType('r'))
 	for k,v in badness_config.items():
-		parser.add_argument("--"+k,help="badness value for "+k,default=v)
+		if k == "smoothness":
+			parser.add_argument("--"+k,help="badness function (as python lambda) for "+k,default=v)
+		else:
+			parser.add_argument("--"+k,help="badness value for "+k,default=v)
 	args = parser.parse_args()
 	for k in badness_config:
 		badness_config[k] = eval('args.'+k)
@@ -273,7 +276,7 @@ def main():
 		logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 	else:
 		logging.basicConfig(level=logging.INFO, format='%(message)s')
-	with args.input as f:
+	with args.inputfile as f:
 		first_line = f.readline().strip()
 		key = BareNote(first_line)
 		lines = f.readlines()
